@@ -1,0 +1,31 @@
+# 编译生成文件
+*.o
+*.exe
+*.dll
+*.dylib
+
+# IDE配置
+.vscode/
+.idea/
+.gradle/
+*.swp
+*.swo
+local.properties
+*.jks
+*.keystore
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+
+# 依赖目录（根据项目类型选择）
+node_modules/
+vendor/
+
+# 构建目录
+build/
+dist/
+schemas/
+/db_lib/schemas/
