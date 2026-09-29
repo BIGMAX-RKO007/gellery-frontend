@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="models_count">Models (%1$d)</string>
+  <string name="close_models">Close models</string>
+  <string name="collapse_model">Collapse model details</string>
+  <string name="expand_model">Expand model details</string>
+  <string name="catalog_online">Online catalog</string>
+  <string name="catalog_cached">Cached catalog</string>
+  <string name="catalog_offline">Offline catalog</string>
+  <string name="capability_image">Image</string>
+  <string name="capability_audio">Audio</string>
+  <string name="minimum_ram">%1$d GB+ RAM</string>
+  <string name="learn_more_and_license">Learn more and see model license</string>
+  <string name="delete_model_question">Delete model?</string>
+  <string name="delete_model_message">%1$s will be removed from this device.</string>
+  <string name="delete">Delete</string>
+  <string name="cancel">Cancel</string>
+  <string name="delete_model">Delete model</string>
+  <string name="unknown_size">Unknown size</string>
+  <string name="waiting_to_download">Waiting to download</string>
+  <string name="download_progress">%1$s / %2$s</string>
+  <string name="downloaded_size">Downloaded · %1$s</string>
+  <string name="download_cancelled">Download cancelled</string>
+  <string name="download_failed">Download failed</string>
+  <string name="download">Download</string>
+  <string name="cancel_queued_download">Cancel queued download</string>
+  <string name="use_model">Use model</string>
+  <string name="not_for_voice_chat">Not for voice chat</string>
+  <string name="failed_to_load_model_list">Failed to load model list</string>
+  <string name="retry">Retry</string>
+  <string name="download_starting">Starting…</string>
+  <string name="download_speed">%1$s/s</string>
+</resources>

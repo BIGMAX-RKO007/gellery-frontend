@@ -47,3 +47,8 @@ dependencyResolutionManagement {
 rootProject.name = "AI Edge Gallery"
 
 include(":app")
+include(":ai-core")
+include(":model-download")
+include(":model-manager-ui")
+include(":voice-chat-app")
+include(":db_lib")

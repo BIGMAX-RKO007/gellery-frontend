@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name" translatable="false">VoxMate</string>
+  <string name="brand_initial" translatable="false">V</string>
+  <string name="app_tagline">Your on-device voice companion</string>
+  <string name="ready_to_chat">Ready to chat</string>
+  <string name="on_device_privacy_message">The model runs locally on your phone. Conversations do not need to be uploaded to the cloud.</string>
+  <string name="ai_chat_core">AI chat core</string>
+  <string name="model_download">Model download</string>
+  <string name="speech_recognition_and_playback">Speech recognition and playback</string>
+  <string name="current_model">Current model</string>
+  <string name="status_connected">Connected</string>
+  <string name="status_next_step">Next step</string>
+  <string name="select_model_and_configure">Select a model and configure</string>
+  <string name="change_model">Change model</string>
+</resources>

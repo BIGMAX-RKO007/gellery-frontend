@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="models_count">模型 (%1$d)</string>
+  <string name="close_models">关闭模型列表</string>
+  <string name="collapse_model">收起模型详情</string>
+  <string name="expand_model">展开模型详情</string>
+  <string name="catalog_online">在线模型列表</string>
+  <string name="catalog_cached">缓存的模型列表</string>
+  <string name="catalog_offline">离线模型列表</string>
+  <string name="capability_image">图片</string>
+  <string name="capability_audio">音频</string>
+  <string name="minimum_ram">需要 %1$d GB 以上内存</string>
+  <string name="learn_more_and_license">了解详情并查看模型许可证</string>
+  <string name="delete_model_question">删除模型？</string>
+  <string name="delete_model_message">将从此设备中删除 %1$s。</string>
+  <string name="delete">删除</string>
+  <string name="cancel">取消</string>
+  <string name="delete_model">删除模型</string>
+  <string name="unknown_size">大小未知</string>
+  <string name="waiting_to_download">等待下载</string>
+  <string name="download_progress">%1$s / %2$s</string>
+  <string name="downloaded_size">已下载 · %1$s</string>
+  <string name="download_cancelled">下载已取消</string>
+  <string name="download_failed">下载失败</string>
+  <string name="download">下载</string>
+  <string name="cancel_queued_download">取消等待中的下载</string>
+  <string name="use_model">使用此模型</string>
+  <string name="not_for_voice_chat">不适用于语音聊天</string>
+  <string name="failed_to_load_model_list">模型列表加载失败</string>
+  <string name="retry">重试</string>
+  <string name="download_starting">正在开始…</string>
+  <string name="download_speed">%1$s/秒</string>
+</resources>

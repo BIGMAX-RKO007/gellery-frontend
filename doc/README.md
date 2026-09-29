@@ -13,6 +13,10 @@
 - [免费文字转语音方案分析](./免费文字转语音方案分析.md)：免费 TTS 方案对比、推荐的语音对话状态流程，以及 Android 系统 TTS 的接入方式。
 - [Android 内置 Skills 机制与功能说明](./Android内置Skills机制与功能说明.md)：`assets/skills` 的加载和执行机制、每个内置技能的实际作用，以及联网、权限和安全注意事项。
 - [Google AI Edge Gallery 费用与许可证说明](./GoogleAIEdgeGallery费用与许可证说明.md)：官方 App 是否收费、包名辨别、近似第三方应用，以及模型许可证和潜在成本说明。
+- [无 UI 能力库拆分设计](./无UI能力库拆分设计.md)：将 LiteRT-LM 对话能力与模型清单/下载能力拆成两个独立 Android Library 的边界、API 和迁移步骤。
+- [VoxMate 新应用模块说明](./VoxMate新应用模块说明.md)：独立语音聊天 App 的命名、模块位置、依赖关系、包名和后续开发入口。
+- [VoxMate 模型管理功能说明](./VoxMate模型管理功能说明.md)：Models 页面的解耦结构、页面行为、下载流程和与原 Gallery 实现的边界。
+- [VoxMate 数据库模块说明](./数据库模块说明.md)：从 password_generator 引入的 Room 参考模块、当前使用边界和后续 VoxMate 数据库设计约束。
 
 ## 维护约定
 

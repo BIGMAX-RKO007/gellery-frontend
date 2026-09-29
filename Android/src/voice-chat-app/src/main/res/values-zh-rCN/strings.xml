@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_tagline">你的端侧语音伙伴</string>
+  <string name="ready_to_chat">准备开始对话</string>
+  <string name="on_device_privacy_message">模型在手机本地运行，对话内容无需上传云端</string>
+  <string name="ai_chat_core">AI 对话核心</string>
+  <string name="model_download">模型下载</string>
+  <string name="speech_recognition_and_playback">语音识别与播报</string>
+  <string name="current_model">当前模型</string>
+  <string name="status_connected">已接入</string>
+  <string name="status_next_step">下一步接入</string>
+  <string name="select_model_and_configure">选择模型并开始配置</string>
+  <string name="change_model">更换模型</string>
+</resources>
