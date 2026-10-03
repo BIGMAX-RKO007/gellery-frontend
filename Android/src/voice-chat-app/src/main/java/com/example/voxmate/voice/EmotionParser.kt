@@ -20,7 +20,7 @@ data class EmotionParseResult(
  */
 object EmotionParser {
 
-  private val EmotionPattern = Regex("\\[(happy|sad|angry|relaxed|surprised|thinking|smile)\\]", RegexOption.IGNORE_CASE)
+  private val EmotionPattern = Regex("\\[(happy|sad|angry|relaxed|surprised|thinking|smile|friendly|joy|calm|excited)\\]", RegexOption.IGNORE_CASE)
 
   /**
    * 解析带情绪标签的文本。
@@ -37,12 +37,12 @@ object EmotionParser {
 
     val rawTag = match.groupValues[1].lowercase()
     val normalizedExpression = when (rawTag) {
-      "smile" -> "happy"
-      "thinking" -> "relaxed"
+      "smile", "friendly", "joy", "excited" -> "happy"
+      "thinking", "calm" -> "relaxed"
       else -> rawTag
     }
 
-    val clean = rawText.replace(match.value, "").trim()
+    val clean = rawText.replace(EmotionPattern, "").trim()
     return EmotionParseResult(cleanText = clean, expression = normalizedExpression)
   }
 }

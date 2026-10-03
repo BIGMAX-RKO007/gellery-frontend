@@ -34,4 +34,36 @@
   <string name="chat_tap_to_stop">Finish</string>
   <string name="chat_poses_toggle">Poses</string>
   <string name="chat_empty_prompt">Tap the mic below or type to chat with your 3D avatar!</string>
+
+  <!-- Gemini-style Sidebar Menu and Home Feature Entries -->
+  <string name="menu_title">VoxMate</string>
+  <string name="menu_tagline">On-Device AI Companion</string>
+  <string name="menu_new_chat">New Chat</string>
+  <string name="menu_search_chat">Search conversations</string>
+  <string name="menu_section_features">Use Cases</string>
+  <string name="menu_avatar_chat">3D AI Avatar Companion</string>
+  <string name="menu_avatar_chat_desc">Real-time voice &amp; 3D poses</string>
+  <string name="menu_model_manager">Models &amp; Compute</string>
+  <string name="menu_model_manager_desc">Manage local LiteRT-LM weights</string>
+  <string name="menu_agent_skills">Agent Skills</string>
+  <string name="menu_agent_skills_desc">Agent with MCP tools</string>
+  <string name="menu_ask_image">Ask Image</string>
+  <string name="menu_ask_image_desc">Multimodal visual QA</string>
+  <string name="menu_audio_scribe">Audio Scribe</string>
+  <string name="menu_audio_scribe_desc">Audio transcription &amp; summary</string>
+  <string name="menu_prompt_lab">Prompt Lab</string>
+  <string name="menu_prompt_lab_desc">Prompt experimentation</string>
+  <string name="menu_tiny_garden">Tiny Garden</string>
+  <string name="menu_tiny_garden_desc">Natural language function calling</string>
+  <string name="menu_mobile_actions">Mobile Actions</string>
+  <string name="menu_mobile_actions_desc">System actions from natural language</string>
+  <string name="menu_scrapbook">Scrapbook</string>
+  <string name="menu_scrapbook_desc">Magic Touch image segmentation</string>
+  <string name="menu_section_recent">Recent</string>
+  <string name="menu_no_recent_chats">No recent conversations</string>
+  <string name="menu_local_device">On-Device Local User</string>
+  <string name="menu_privacy_safe">100% Offline &amp; Private</string>
+  <string name="feature_intro_dialog_title">Feature Introduction</string>
+  <string name="feature_intro_dialog_confirm">Go to Model Manager</string>
+  <string name="feature_intro_dialog_dismiss">Close</string>
 </resources>

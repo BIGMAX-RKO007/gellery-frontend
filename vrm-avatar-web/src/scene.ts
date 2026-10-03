@@ -9,19 +9,19 @@ export interface SceneContext {
 
 export function createScene(container: HTMLElement): SceneContext {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xffffff);
+  scene.background = new THREE.Color(0xF5F7FB);
 
   const getWidth = () => container.clientWidth > 0 ? container.clientWidth : (window.innerWidth > 0 ? window.innerWidth : 360);
-  const getHeight = () => container.clientHeight > 0 ? container.clientHeight : (window.innerHeight > 0 ? window.innerHeight : 300);
+  const getHeight = () => container.clientHeight > 0 ? container.clientHeight : (window.innerHeight > 0 ? window.innerHeight : 600);
 
   const initialWidth = getWidth();
   const initialHeight = getHeight();
   const aspect = initialWidth / initialHeight;
 
   const camera = new THREE.PerspectiveCamera(30.0, aspect, 0.1, 20.0);
-  // 默认景别：优雅自然的 3/4 身体站姿（平视胸部偏下，完整呈现面部、双臂垂放与腰臀）
-  camera.position.set(0.0, 1.05, 1.95);
-  camera.lookAt(0.0, 1.00, 0.0);
+  // 全屏视图下的自然半身视角
+  camera.position.set(0.0, 1.10, 2.20);
+  camera.lookAt(0.0, 1.05, 0.0);
 
   const renderer = new THREE.WebGLRenderer({
     alpha: false,
@@ -81,15 +81,17 @@ export type CameraMode = 'full' | 'upper' | 'portrait';
  */
 export function setCameraMode(camera: THREE.PerspectiveCamera, mode: CameraMode) {
   if (mode === 'full') {
-    camera.position.set(0.0, 0.85, 2.75);
+    // 全身视角：在窄屏手机上完整呈现头顶到脚尖
+    camera.position.set(0.0, 0.82, 3.25);
     camera.lookAt(0.0, 0.80, 0.0);
   } else if (mode === 'portrait') {
-    camera.position.set(0.0, 1.35, 1.25);
+    // 特写视角：专注面部微笑与说话嘴型
+    camera.position.set(0.0, 1.35, 1.35);
     camera.lookAt(0.0, 1.30, 0.0);
   } else {
-    // 默认 upper
-    camera.position.set(0.0, 1.05, 1.95);
-    camera.lookAt(0.0, 1.00, 0.0);
+    // 默认 upper (优雅半身)
+    camera.position.set(0.0, 1.10, 2.20);
+    camera.lookAt(0.0, 1.05, 0.0);
   }
 }
 
