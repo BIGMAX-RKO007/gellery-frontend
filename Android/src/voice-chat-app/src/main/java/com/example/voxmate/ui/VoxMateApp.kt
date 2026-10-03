@@ -30,6 +30,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,6 +42,12 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.voxmate.bridge.VrmBridgeController
+import com.example.voxmate.ui.avatar.VrmAvatarView
+import com.example.voxmate.voice.AndroidSpeechOutput
+import com.example.voxmate.voice.EmotionParser
+import com.example.voxmate.voice.LipSyncDriver
+import com.example.voxmate.voice.SpeechOutputEvent
 import com.google.ai.edge.gallery.modelmanagerui.ModelManagerRoute
 import com.google.ai.edge.gallery.modelmanagerui.SelectedModel
 
@@ -106,9 +116,34 @@ private fun VoiceChatHome(selectedModelName: String?, onConfigureModels: () -> U
 
     Spacer(Modifier.height(16.dp))
 
-    // 3D AI 数字人视窗
-    var bridgeController by remember { mutableStateOf<com.example.voxmate.bridge.VrmBridgeController?>(null) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var bridgeController by remember { mutableStateOf<VrmBridgeController?>(null) }
     var isAvatarReady by remember { mutableStateOf(false) }
+    var isSpeaking by remember { mutableStateOf(false) }
+
+    val speechOutput = remember { AndroidSpeechOutput(context, coroutineScope) }
+    val lipSyncDriver = remember {
+      LipSyncDriver(bridgeControllerProvider = { bridgeController }, coroutineScope = coroutineScope).apply {
+        attachSpeechOutput(speechOutput)
+      }
+    }
+
+    LaunchedEffect(speechOutput) {
+      speechOutput.events.collect { event ->
+        when (event) {
+          is SpeechOutputEvent.Started -> isSpeaking = true
+          is SpeechOutputEvent.Completed, is SpeechOutputEvent.Error -> isSpeaking = false
+        }
+      }
+    }
+
+    DisposableEffect(speechOutput) {
+      onDispose {
+        lipSyncDriver.stopLipSync()
+        speechOutput.release()
+      }
+    }
 
     Card(
       modifier = Modifier.fillMaxWidth().height(280.dp),
@@ -117,7 +152,7 @@ private fun VoiceChatHome(selectedModelName: String?, onConfigureModels: () -> U
       elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
       Box(modifier = Modifier.fillMaxSize()) {
-        com.example.voxmate.ui.avatar.VrmAvatarView(
+        VrmAvatarView(
           modifier = Modifier.fillMaxSize(),
           onControllerReady = { controller -> bridgeController = controller },
           onAvatarReady = { isAvatarReady = true },
@@ -130,31 +165,22 @@ private fun VoiceChatHome(selectedModelName: String?, onConfigureModels: () -> U
           color = Color(0xCCF5F7FB),
         ) {
           Text(
-            text = if (isAvatarReady) stringResource(com.example.voxmate.R.string.avatar_title)
+            text = if (isSpeaking) stringResource(com.example.voxmate.R.string.voice_demo_speaking)
+            else if (isAvatarReady) stringResource(com.example.voxmate.R.string.avatar_title)
             else stringResource(com.example.voxmate.R.string.avatar_loading),
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             fontSize = 12.sp,
-            color = if (isAvatarReady) VoxBlue else Color.Gray,
+            color = if (isSpeaking) ReadyGreen else if (isAvatarReady) VoxBlue else Color.Gray,
             fontWeight = FontWeight.Medium,
           )
         }
 
-        // 原生交互快捷测试栏（发声、微笑、复位）
-        if (isAvatarReady) {
+        // 原生交互快捷测试栏（微调表情与复位）
+        if (isAvatarReady && !isSpeaking) {
           Row(
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
           ) {
-            Button(
-              onClick = {
-                bridgeController?.speak(0.85f)
-              },
-              shape = RoundedCornerShape(12.dp),
-              colors = ButtonDefaults.buttonColors(containerColor = VoxBlue),
-              contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-            ) {
-              Text(stringResource(com.example.voxmate.R.string.avatar_action_speak), fontSize = 12.sp)
-            }
             Button(
               onClick = {
                 bridgeController?.setExpression("happy")
@@ -182,6 +208,37 @@ private fun VoiceChatHome(selectedModelName: String?, onConfigureModels: () -> U
     }
 
     Spacer(Modifier.height(16.dp))
+
+    // 智能语音发声与自动唇形同步按钮
+    if (isAvatarReady) {
+      Button(
+        onClick = {
+          if (isSpeaking) {
+            speechOutput.stop()
+            bridgeController?.resetExpression()
+          } else {
+            val rawGreeting = context.getString(com.example.voxmate.R.string.voice_demo_greeting)
+            val parsed = EmotionParser.parse(rawGreeting)
+            parsed.expression?.let { bridgeController?.setExpression(it) }
+            speechOutput.speak(parsed.cleanText)
+          }
+        },
+        modifier = Modifier.fillMaxWidth().height(52.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(
+          containerColor = if (isSpeaking) Color(0xFFE53935) else ReadyGreen
+        ),
+      ) {
+        Text(
+          text = if (isSpeaking) stringResource(com.example.voxmate.R.string.voice_demo_stop)
+          else stringResource(com.example.voxmate.R.string.voice_demo_btn),
+          fontSize = 15.sp,
+          fontWeight = FontWeight.SemiBold,
+        )
+      }
+      Spacer(Modifier.height(12.dp))
+    }
+
     StatusCard(
       stringResource(com.example.voxmate.R.string.ai_chat_core),
       stringResource(com.example.voxmate.R.string.status_connected),

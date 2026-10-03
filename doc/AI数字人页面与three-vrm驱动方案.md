@@ -27,9 +27,26 @@ vrm-avatar-web/                      独立前端工程（Vite + TypeScript）
   └── vite.config.ts
 ```
 
-## 3. 分阶段落地步骤
+## 3. 分阶段落地与实施记录
 
-- **阶段 1**：搭建前端工程 `vrm-avatar-web`，调通 Three.js + three-vrm 场景与模型渲染，暴露 JS 控制接口，实现离线打包同步。
-- **阶段 2**：在 `voice-chat-app` 中集成 `WebView`，实现 `VrmAvatarView` Compose 组件并在真机上验证 60fps 流畅运行。
-- **阶段 3**：打通 TTS 语音发音时的唇形同步（Viseme Lip Sync）与 AI 情绪表情切换。
-- **阶段 4**：重构 VoxMate 页面布局，实现沉浸式数字人语音交互，支持用户导入自定义 `.vrm` 模型。
+### 阶段 1：前端工程 `vrm-avatar-web` 搭建【已完成】
+- 采用 Vite + TypeScript + Three.js 0.174 + `@pixiv/three-vrm` 3.3.6。
+- 实现了 `SceneManager`（透视相机、平行光、环境光、`ResizeObserver` 自适应）、`VrmManager`（VRM 1.0 模型加载、自然待机呼吸、随机眨眼、BlendShape 嘴型与情绪控制）。
+- 通过 `sync-to-android.sh` 一键构建并同步到 `Android/src/voice-chat-app/src/main/assets/vrm-web/`。
+- **关键经验**：VRM 1.0 规范中模型默认朝向 +Z 面向相机，不需要也不应执行 `scene.rotation.y = Math.PI`（VRM 0.0 需要，1.0 不需要，否则模型会背对镜头）。
+
+### 阶段 2：Android Native WebView & Compose 集成【已完成并在真机验证】
+- 封装 `VrmAvatarView.kt` Compose 组件，使用 `WebViewAssetLoader` 拦截 `https://appassets.androidplatform.net/assets/` 安全高效加载本地离线资源。
+- 注入 `VrmBridgeController`（实现 `@JavascriptInterface` 与线程安全的 `evaluateJavascript` 调度）。
+- **关键经验**：高通骁龙 8 Gen 1（Adreno 730）在 WebView 透明背景与 WebGL `alpha: true` 组合下会触发 `OpenGLRenderer: Unable to match the desired swap behavior` 导致花屏或白屏。采用不透明底色与 `alpha: false` 彻底解决渲染稳定性问题。
+
+### 阶段 3：TTS 语音合成与实时唇形/情绪联动【已完成并在真机验证】
+- `AndroidSpeechOutput.kt`：封装 Android 系统原生 `TextToSpeech` 引擎，通过 `UtteranceProgressListener` 发送 `SpeechEvent.Started`、`SpeechEvent.Completed`、`SpeechEvent.Error`。
+- `LipSyncDriver.kt`：挂载 TTS 播放事件，在发声期间以 ~30fps 节拍生成自然韵律变化的元音音素（`speak(volume)`，范围 0.15~0.90），语音结束时柔和归零闭嘴。
+- `EmotionParser.kt`：解析对话文本中的情绪标签（如 `[happy]你好！`），提取出纯文本交给 TTS 播报，同时自动驱动数字人对应的表情 BlendShape。
+- **真机验证结果**：在 Sony Xperia 1 IV（Android 14）真机上验证，点击发音按钮后，数字人同步展现开朗微笑表情、自然开合嘴型配合 TTS 语音输出，播报完成后自然闭嘴复位。
+
+### 阶段 4：沉浸式数字人语音交互页面重构与端侧模型串联【下一步】
+- 重构 `VoiceChatHome` 页面布局：上方全屏/半屏沉浸式 3D 数字人视口，下方浮动对话气泡与语音交互控制器。
+- 将端侧模型推理（`:ai-core`）流式 Token 输出接入 `EmotionParser` + `AndroidSpeechOutput` + `LipSyncDriver`，实现完整的端到端语音数字人对话。
+
