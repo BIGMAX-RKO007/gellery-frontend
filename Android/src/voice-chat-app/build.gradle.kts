@@ -30,6 +30,10 @@ android {
   }
 
   buildFeatures { compose = true }
+
+  androidResources {
+    noCompress += listOf("vrm")
+  }
 }
 
 kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
@@ -48,6 +52,7 @@ dependencies {
   implementation(libs.androidx.ui.tooling.preview)
   implementation(libs.androidx.material3)
   implementation(libs.androidx.compose.navigation)
+  implementation(libs.androidx.webkit)
 
   debugImplementation(libs.androidx.ui.tooling)
 }

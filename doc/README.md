@@ -17,6 +17,7 @@
 - [VoxMate 新应用模块说明](./VoxMate新应用模块说明.md)：独立语音聊天 App 的命名、模块位置、依赖关系、包名和后续开发入口。
 - [VoxMate 模型管理功能说明](./VoxMate模型管理功能说明.md)：Models 页面的解耦结构、页面行为、下载流程和与原 Gallery 实现的边界。
 - [VoxMate 数据库模块说明](./数据库模块说明.md)：从 password_generator 引入的 Room 参考模块、当前使用边界和后续 VoxMate 数据库设计约束。
+- [AI 数字人页面与 three-vrm 驱动方案](./AI数字人页面与three-vrm驱动方案.md)：在 VoxMate 中使用 Three.js + three-vrm 驱动 3D 虚拟数字人的架构、Native-Web 桥接与落地计划。
 
 ## 维护约定
 
