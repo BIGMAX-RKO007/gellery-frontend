@@ -25,4 +25,11 @@
   <string name="camera_mode_portrait">特写</string>
   <string name="avatar_poses_title">动作姿态库 (1 ~ 25)</string>
   <string name="avatar_pose_stand">站姿复位</string>
+  <string name="chat_input_hint">说点什么，或输入文字...</string>
+  <string name="chat_send">发送</string>
+  <string name="chat_tap_to_speak">点击说话</string>
+  <string name="chat_listening">正在倾听中...</string>
+  <string name="chat_tap_to_stop">结束说话</string>
+  <string name="chat_poses_toggle">姿态动作</string>
+  <string name="chat_empty_prompt">点击下方麦克风或输入文字，开启语音对话吧！</string>
 </resources>

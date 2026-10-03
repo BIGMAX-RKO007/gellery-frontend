@@ -27,4 +27,11 @@
   <string name="camera_mode_portrait">Close-up</string>
   <string name="avatar_poses_title">Poses (1 ~ 25)</string>
   <string name="avatar_pose_stand">Stand Reset</string>
+  <string name="chat_input_hint">Say something or type here...</string>
+  <string name="chat_send">Send</string>
+  <string name="chat_tap_to_speak">Tap to Speak</string>
+  <string name="chat_listening">Listening...</string>
+  <string name="chat_tap_to_stop">Finish</string>
+  <string name="chat_poses_toggle">Poses</string>
+  <string name="chat_empty_prompt">Tap the mic below or type to chat with your 3D avatar!</string>
 </resources>
