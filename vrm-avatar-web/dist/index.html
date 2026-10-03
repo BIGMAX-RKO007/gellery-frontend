@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>VoxMate 3D Avatar</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      #canvas-container {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+      }
+      #loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: rgba(245, 247, 251, 0.85);
+        backdrop-filter: blur(8px);
+        z-index: 10;
+        transition: opacity 0.4s ease;
+        color: #2557d6;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .spinner {
+        width: 36px;
+        height: 36px;
+        border: 3px solid rgba(37, 87, 214, 0.15);
+        border-top-color: #2557d6;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 12px;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      /* 调试工具栏（移动端生产环境可隐藏） */
+      #debug-toolbar {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 20;
+        display: flex;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        opacity: 0.9;
+      }
+      .debug-btn {
+        background: #2557d6;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: transform 0.1s, background-color 0.2s;
+      }
+      .debug-btn:active {
+        transform: scale(0.95);
+      }
+      .debug-btn.secondary {
+        background: #eef2fa;
+        color: #2557d6;
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-D3F1x8CD.js"></script>
+  </head>
+  <body>
+    <div id="canvas-container"></div>
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div id="loading-text">正在唤醒 3D 数字人...</div>
+    </div>
+
+    <!-- 开发测试用快捷按钮 -->
+    <div id="debug-toolbar">
+      <button class="debug-btn" id="btn-speak">张嘴说话</button>
+      <button class="debug-btn secondary" id="btn-happy">开心</button>
+      <button class="debug-btn secondary" id="btn-blink">眨眼</button>
+      <button class="debug-btn secondary" id="btn-reset">复位</button>
+    </div>
+
+  </body>
+</html>
