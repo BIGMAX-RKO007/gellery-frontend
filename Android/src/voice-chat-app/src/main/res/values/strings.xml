@@ -22,4 +22,9 @@
   <string name="voice_demo_greeting">[happy] Hello! I am VoxMate, your 3D on-device voice companion.</string>
   <string name="voice_demo_speaking">Speaking...</string>
   <string name="voice_demo_stop">Stop</string>
+  <string name="camera_mode_full">Full</string>
+  <string name="camera_mode_upper">Half</string>
+  <string name="camera_mode_portrait">Close-up</string>
+  <string name="avatar_poses_title">Poses (1 ~ 25)</string>
+  <string name="avatar_pose_stand">Stand Reset</string>
 </resources>

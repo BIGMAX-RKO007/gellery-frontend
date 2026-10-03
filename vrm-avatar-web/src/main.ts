@@ -17,7 +17,7 @@ async function bootstrap() {
 
   // 2. 初始化 VRM 管理器与桥接器
   const vrmManager = new VRMManager(scene);
-  const controller = setupBridge(vrmManager);
+  const controller = setupBridge(vrmManager, camera);
 
   // 3. 加载初始 VRM 模型
   try {

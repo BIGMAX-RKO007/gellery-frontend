@@ -19,9 +19,9 @@ export function createScene(container: HTMLElement): SceneContext {
   const aspect = initialWidth / initialHeight;
 
   const camera = new THREE.PerspectiveCamera(30.0, aspect, 0.1, 20.0);
-  // 相机聚焦于数字人上半身，VRM 面部约在 1.35m
-  camera.position.set(0.0, 1.35, 1.25);
-  camera.lookAt(0.0, 1.30, 0.0);
+  // 默认景别：优雅自然的 3/4 身体站姿（平视胸部偏下，完整呈现面部、双臂垂放与腰臀）
+  camera.position.set(0.0, 1.05, 1.95);
+  camera.lookAt(0.0, 1.00, 0.0);
 
   const renderer = new THREE.WebGLRenderer({
     alpha: false,
@@ -70,3 +70,26 @@ export function createScene(container: HTMLElement): SceneContext {
 
   return { scene, camera, renderer, clock };
 }
+
+export type CameraMode = 'full' | 'upper' | 'portrait';
+
+/**
+ * 切换摄像机景别模式
+ * - 'full': 全身镜头 (包含头部至双脚)
+ * - 'upper': 3/4 优雅站姿 (默认，包含头部、胸部、手臂及腰臀)
+ * - 'portrait': 特写镜头 (专注于面部与表情)
+ */
+export function setCameraMode(camera: THREE.PerspectiveCamera, mode: CameraMode) {
+  if (mode === 'full') {
+    camera.position.set(0.0, 0.85, 2.75);
+    camera.lookAt(0.0, 0.80, 0.0);
+  } else if (mode === 'portrait') {
+    camera.position.set(0.0, 1.35, 1.25);
+    camera.lookAt(0.0, 1.30, 0.0);
+  } else {
+    // 默认 upper
+    camera.position.set(0.0, 1.05, 1.95);
+    camera.lookAt(0.0, 1.00, 0.0);
+  }
+}
+

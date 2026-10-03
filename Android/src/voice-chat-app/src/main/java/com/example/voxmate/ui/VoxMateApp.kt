@@ -19,9 +19,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -89,6 +94,7 @@ private fun VoiceChatHome(selectedModelName: String?, onConfigureModels: () -> U
       Modifier.fillMaxSize()
         .statusBarsPadding()
         .navigationBarsPadding()
+        .verticalScroll(rememberScrollState())
         .padding(horizontal = 24.dp, vertical = 20.dp),
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
@@ -121,6 +127,8 @@ private fun VoiceChatHome(selectedModelName: String?, onConfigureModels: () -> U
     var bridgeController by remember { mutableStateOf<VrmBridgeController?>(null) }
     var isAvatarReady by remember { mutableStateOf(false) }
     var isSpeaking by remember { mutableStateOf(false) }
+    var cameraMode by remember { mutableStateOf("upper") }
+    var selectedPose by remember { mutableStateOf(0) }
 
     val speechOutput = remember { AndroidSpeechOutput(context, coroutineScope) }
     val lipSyncDriver = remember {
@@ -146,7 +154,7 @@ private fun VoiceChatHome(selectedModelName: String?, onConfigureModels: () -> U
     }
 
     Card(
-      modifier = Modifier.fillMaxWidth().height(280.dp),
+      modifier = Modifier.fillMaxWidth().height(360.dp),
       shape = RoundedCornerShape(24.dp),
       colors = CardDefaults.cardColors(containerColor = Color.White),
       elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -173,6 +181,38 @@ private fun VoiceChatHome(selectedModelName: String?, onConfigureModels: () -> U
             color = if (isSpeaking) ReadyGreen else if (isAvatarReady) VoxBlue else Color.Gray,
             fontWeight = FontWeight.Medium,
           )
+        }
+
+        // 摄像机视角切换栏（右上角：半身 / 全身 / 特写）
+        if (isAvatarReady) {
+          Row(
+            modifier = Modifier.align(Alignment.TopEnd).padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+          ) {
+            listOf(
+              "upper" to com.example.voxmate.R.string.camera_mode_upper,
+              "full" to com.example.voxmate.R.string.camera_mode_full,
+              "portrait" to com.example.voxmate.R.string.camera_mode_portrait,
+            ).forEach { (mode, strId) ->
+              val isSelected = cameraMode == mode
+              Surface(
+                onClick = {
+                  cameraMode = mode
+                  bridgeController?.setCameraMode(mode)
+                },
+                shape = RoundedCornerShape(8.dp),
+                color = if (isSelected) VoxBlue else Color(0xCCF0F4FF),
+              ) {
+                Text(
+                  text = stringResource(strId),
+                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                  fontSize = 11.sp,
+                  color = if (isSelected) Color.White else VoxBlue,
+                  fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                )
+              }
+            }
+          }
         }
 
         // 原生交互快捷测试栏（微调表情与复位）
@@ -249,7 +289,79 @@ private fun VoiceChatHome(selectedModelName: String?, onConfigureModels: () -> U
       StatusCard(stringResource(com.example.voxmate.R.string.current_model), selectedModelName, true)
     }
 
-    Spacer(Modifier.weight(1f))
+    Spacer(Modifier.height(14.dp))
+
+    // 25 个动作姿态控制面板 (5x5 矩阵)
+    Card(
+      modifier = Modifier.fillMaxWidth(),
+      shape = RoundedCornerShape(20.dp),
+      colors = CardDefaults.cardColors(containerColor = Color.White),
+      elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+      Column(modifier = Modifier.padding(16.dp)) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Text(
+            text = stringResource(com.example.voxmate.R.string.avatar_poses_title),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF1E293B),
+          )
+          TextButton(
+            onClick = {
+              selectedPose = 0
+              bridgeController?.resetPose()
+            },
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+          ) {
+            Text(
+              text = stringResource(com.example.voxmate.R.string.avatar_pose_stand),
+              fontSize = 12.sp,
+              color = if (selectedPose == 0) VoxBlue else Color.Gray,
+              fontWeight = if (selectedPose == 0) FontWeight.Bold else FontWeight.Normal,
+            )
+          }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // 5 列 x 5 行动作编号网格 (1 ~ 25)
+        for (row in 0 until 5) {
+          Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+          ) {
+            for (col in 0 until 5) {
+              val poseId = row * 5 + col + 1
+              val isSelected = selectedPose == poseId
+              Surface(
+                onClick = {
+                  selectedPose = poseId
+                  bridgeController?.setPose(poseId)
+                },
+                modifier = Modifier.weight(1f).aspectRatio(1.25f),
+                shape = RoundedCornerShape(10.dp),
+                color = if (isSelected) VoxBlue else Color(0xFFF1F5F9),
+              ) {
+                Box(contentAlignment = Alignment.Center) {
+                  Text(
+                    text = "$poseId",
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) Color.White else Color(0xFF334155),
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    Spacer(Modifier.height(16.dp))
     Button(
       onClick = onConfigureModels,
       modifier = Modifier.fillMaxWidth().height(58.dp),

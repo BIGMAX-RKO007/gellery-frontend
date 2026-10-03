@@ -57,6 +57,31 @@ class VrmBridgeController(
   }
 
   /**
+   * 切换数字人摄像机景别模式。
+   *
+   * @param mode 景别标识："full"（全身）、"upper"（3/4 优雅半身）、"portrait"（特写头像）。
+   */
+  fun setCameraMode(mode: String) {
+    runJs("window.avatarController && window.avatarController.setCameraMode('$mode');")
+  }
+
+  /**
+   * 切换数字人 3D 动作姿态。
+   *
+   * @param poseId 姿态序号 (0: 自然站姿，1 ~ 25: 对应参考图预设姿态)。
+   */
+  fun setPose(poseId: Int) {
+    runJs("window.avatarController && window.avatarController.setPose($poseId);")
+  }
+
+  /**
+   * 复位至默认自然站姿。
+   */
+  fun resetPose() {
+    runJs("window.avatarController && window.avatarController.resetPose();")
+  }
+
+  /**
    * 安全执行 JavaScript 代码块。
    *
    * @param script 欲在 WebView 中执行的 JS 脚本字符串。

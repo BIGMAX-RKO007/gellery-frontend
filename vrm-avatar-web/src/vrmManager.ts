@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRM, VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+import { PoseManager } from './poseManager';
 
 export class VRMManager {
   private scene: THREE.Scene;
   public currentVrm: VRM | null = null;
+  public readonly poseManager: PoseManager = new PoseManager();
 
   // 眨眼状态机
   private blinkTimer = 0;
@@ -56,6 +58,10 @@ export class VRMManager {
           VRMUtils.combineSkeletons(gltf.scene);
 
           this.scene.add(vrm.scene);
+
+          // 将模型接入姿态管理器并初始化为自然站姿
+          this.poseManager.attachVRM(vrm);
+
           resolve(vrm);
         },
         (progress) => {
@@ -130,11 +136,30 @@ export class VRMManager {
       manager.setValue('oh', this.currentMouthVolume * 0.4);
     }
 
-    // 3. 待机胸腔自然呼吸与脊椎轻微晃动
-    this.updateIdleBreathing();
+    // 3. 姿态平滑过渡更新
+    this.poseManager.update(deltaTime);
 
-    // 4. VRM 内部弹簧骨骼与表情引擎更新
+    // 4. 默认站姿下叠加待机胸腔自然呼吸与微晃
+    if (this.poseManager.getCurrentPoseId() === 0) {
+      this.updateIdleBreathing();
+    }
+
+    // 5. VRM 内部弹簧骨骼与表情引擎更新
     this.currentVrm.update(deltaTime);
+  }
+
+  /**
+   * 设置 3D 人物动作姿态 (0 ~ 25)
+   */
+  public setPose(id: number) {
+    this.poseManager.setPose(id);
+  }
+
+  /**
+   * 复位至默认自然站立姿态
+   */
+  public resetPose() {
+    this.poseManager.resetToDefault();
   }
 
   private updateBlink(deltaTime: number) {
@@ -183,6 +208,46 @@ export class VRMManager {
       // 头部细微跟随微晃
       head.rotation.y = Math.sin(this.elapsedTime * 0.8) * 0.02;
       head.rotation.z = Math.cos(this.elapsedTime * 0.9) * 0.01;
+    }
+
+    // 双臂跟随呼吸轻微起伏，且每帧维持自然下垂姿态
+    const leftUpperArm = this.currentVrm.humanoid.getNormalizedBoneNode('leftUpperArm');
+    const rightUpperArm = this.currentVrm.humanoid.getNormalizedBoneNode('rightUpperArm');
+    if (leftUpperArm) {
+      leftUpperArm.rotation.set(0.1 + breathCycle * 0.005, 0.0, -1.22 + breathCycle * 0.006);
+    }
+    if (rightUpperArm) {
+      rightUpperArm.rotation.set(0.1 + breathCycle * 0.005, 0.0, 1.22 - breathCycle * 0.006);
+    }
+  }
+
+  /**
+   * 应用自然站立姿态（双手下垂至身体两侧，手肘轻微自然内弯）
+   */
+  public applyNaturalPose() {
+    if (!this.currentVrm || !this.currentVrm.humanoid) return;
+    const humanoid = this.currentVrm.humanoid;
+
+    // 左大臂自然下垂：Z 轴旋转 -1.22 rad (约 -70 度)，X 轴微向前 0.1 rad
+    const leftUpperArm = humanoid.getNormalizedBoneNode('leftUpperArm');
+    if (leftUpperArm) {
+      leftUpperArm.rotation.set(0.1, 0.0, -1.22);
+    }
+
+    // 右大臂自然下垂：Z 轴旋转 +1.22 rad (约 +70 度)，X 轴微向前 0.1 rad
+    const rightUpperArm = humanoid.getNormalizedBoneNode('rightUpperArm');
+    if (rightUpperArm) {
+      rightUpperArm.rotation.set(0.1, 0.0, 1.22);
+    }
+
+    // 左右小臂（手肘）：自然微微向内弯曲，双手自然落在腰腹两侧
+    const leftLowerArm = humanoid.getNormalizedBoneNode('leftLowerArm');
+    if (leftLowerArm) {
+      leftLowerArm.rotation.set(0.0, 0.25, 0.0);
+    }
+    const rightLowerArm = humanoid.getNormalizedBoneNode('rightLowerArm');
+    if (rightLowerArm) {
+      rightLowerArm.rotation.set(0.0, -0.25, 0.0);
     }
   }
 }

@@ -20,4 +20,9 @@
   <string name="voice_demo_greeting">[happy] 你好！我是你的端侧 3D 数字人伙伴 VoxMate。很高兴与你见面，我已经准备好随时和你语音聊天啦！</string>
   <string name="voice_demo_speaking">正在发声说话...</string>
   <string name="voice_demo_stop">停止说话</string>
+  <string name="camera_mode_full">全身</string>
+  <string name="camera_mode_upper">半身</string>
+  <string name="camera_mode_portrait">特写</string>
+  <string name="avatar_poses_title">动作姿态库 (1 ~ 25)</string>
+  <string name="avatar_pose_stand">站姿复位</string>
 </resources>
