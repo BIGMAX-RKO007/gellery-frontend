@@ -24,12 +24,12 @@ async function bootstrap() {
     if (loadingText) loadingText.textContent = '正在加载 3D 数字人模型...';
     await controller.loadModel('./models/avatar.vrm');
 
-    // 渐隐加载遮罩
+    // 彻底移除加载遮罩
     if (loadingOverlay) {
       loadingOverlay.style.opacity = '0';
       setTimeout(() => {
-        loadingOverlay.style.display = 'none';
-      }, 400);
+        loadingOverlay.remove();
+      }, 300);
     }
     console.log('✅ VRM 数字人初始化完成，就绪！');
   } catch (error) {

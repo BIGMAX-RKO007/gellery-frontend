@@ -13,4 +13,9 @@
   <string name="status_next_step">Next step</string>
   <string name="select_model_and_configure">Select a model and configure</string>
   <string name="change_model">Change model</string>
+  <string name="avatar_title">3D AI Avatar</string>
+  <string name="avatar_action_speak">Speak</string>
+  <string name="avatar_action_happy">Happy</string>
+  <string name="avatar_action_reset">Reset</string>
+  <string name="avatar_loading">Loading 3D Avatar...</string>
 </resources>

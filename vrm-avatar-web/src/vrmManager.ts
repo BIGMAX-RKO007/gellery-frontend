@@ -48,8 +48,8 @@ export class VRMManager {
 
           this.currentVrm = vrm;
 
-          // VRM 规范默认朝向 -Z，需要绕 Y 轴旋转 180 度正对相机
-          vrm.scene.rotation.y = Math.PI;
+          // VRM 1.0 模型默认朝向正向相机 (+Z)
+          vrm.scene.rotation.y = 0;
 
           // 关闭部分无关物理阴影，优化移动端性能
           VRMUtils.removeUnnecessaryVertices(gltf.scene);

@@ -104,38 +104,91 @@ private fun VoiceChatHome(selectedModelName: String?, onConfigureModels: () -> U
       }
     }
 
-    Spacer(Modifier.height(48.dp))
-    Text(
-      stringResource(com.example.voxmate.R.string.ready_to_chat),
-      style = MaterialTheme.typography.headlineMedium,
-      fontWeight = FontWeight.Bold,
-    )
-    Text(
-      stringResource(com.example.voxmate.R.string.on_device_privacy_message),
-      modifier = Modifier.padding(top = 10.dp),
-      color = Color(0xFF687086),
-    )
+    Spacer(Modifier.height(16.dp))
 
-    Spacer(Modifier.height(32.dp))
+    // 3D AI 数字人视窗
+    var bridgeController by remember { mutableStateOf<com.example.voxmate.bridge.VrmBridgeController?>(null) }
+    var isAvatarReady by remember { mutableStateOf(false) }
+
+    Card(
+      modifier = Modifier.fillMaxWidth().height(280.dp),
+      shape = RoundedCornerShape(24.dp),
+      colors = CardDefaults.cardColors(containerColor = Color.White),
+      elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+      Box(modifier = Modifier.fillMaxSize()) {
+        com.example.voxmate.ui.avatar.VrmAvatarView(
+          modifier = Modifier.fillMaxSize(),
+          onControllerReady = { controller -> bridgeController = controller },
+          onAvatarReady = { isAvatarReady = true },
+        )
+
+        // 数字人状态标签
+        Surface(
+          modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
+          shape = RoundedCornerShape(12.dp),
+          color = Color(0xCCF5F7FB),
+        ) {
+          Text(
+            text = if (isAvatarReady) stringResource(com.example.voxmate.R.string.avatar_title)
+            else stringResource(com.example.voxmate.R.string.avatar_loading),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            fontSize = 12.sp,
+            color = if (isAvatarReady) VoxBlue else Color.Gray,
+            fontWeight = FontWeight.Medium,
+          )
+        }
+
+        // 原生交互快捷测试栏（发声、微笑、复位）
+        if (isAvatarReady) {
+          Row(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+          ) {
+            Button(
+              onClick = {
+                bridgeController?.speak(0.85f)
+              },
+              shape = RoundedCornerShape(12.dp),
+              colors = ButtonDefaults.buttonColors(containerColor = VoxBlue),
+              contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+              Text(stringResource(com.example.voxmate.R.string.avatar_action_speak), fontSize = 12.sp)
+            }
+            Button(
+              onClick = {
+                bridgeController?.setExpression("happy")
+              },
+              shape = RoundedCornerShape(12.dp),
+              colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF0F4FF)),
+              contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+              Text(stringResource(com.example.voxmate.R.string.avatar_action_happy), color = VoxBlue, fontSize = 12.sp)
+            }
+            Button(
+              onClick = {
+                bridgeController?.speak(0f)
+                bridgeController?.resetExpression()
+              },
+              shape = RoundedCornerShape(12.dp),
+              colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5F7FB)),
+              contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+              Text(stringResource(com.example.voxmate.R.string.avatar_action_reset), color = Color.Gray, fontSize = 12.sp)
+            }
+          }
+        }
+      }
+    }
+
+    Spacer(Modifier.height(16.dp))
     StatusCard(
       stringResource(com.example.voxmate.R.string.ai_chat_core),
       stringResource(com.example.voxmate.R.string.status_connected),
       true,
     )
-    Spacer(Modifier.height(12.dp))
-    StatusCard(
-      stringResource(com.example.voxmate.R.string.model_download),
-      stringResource(com.example.voxmate.R.string.status_connected),
-      true,
-    )
-    Spacer(Modifier.height(12.dp))
-    StatusCard(
-      stringResource(com.example.voxmate.R.string.speech_recognition_and_playback),
-      stringResource(com.example.voxmate.R.string.status_next_step),
-      false,
-    )
     if (selectedModelName != null) {
-      Spacer(Modifier.height(12.dp))
+      Spacer(Modifier.height(8.dp))
       StatusCard(stringResource(com.example.voxmate.R.string.current_model), selectedModelName, true)
     }
 

@@ -11,4 +11,9 @@
   <string name="status_next_step">下一步接入</string>
   <string name="select_model_and_configure">选择模型并开始配置</string>
   <string name="change_model">更换模型</string>
+  <string name="avatar_title">3D AI 数字人</string>
+  <string name="avatar_action_speak">发声测试</string>
+  <string name="avatar_action_happy">微笑</string>
+  <string name="avatar_action_reset">复位</string>
+  <string name="avatar_loading">数字人加载中...</string>
 </resources>

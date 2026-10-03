@@ -9,34 +9,41 @@ export interface SceneContext {
 
 export function createScene(container: HTMLElement): SceneContext {
   const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
 
-  const aspect = container.clientWidth / container.clientHeight;
+  const getWidth = () => container.clientWidth > 0 ? container.clientWidth : (window.innerWidth > 0 ? window.innerWidth : 360);
+  const getHeight = () => container.clientHeight > 0 ? container.clientHeight : (window.innerHeight > 0 ? window.innerHeight : 300);
+
+  const initialWidth = getWidth();
+  const initialHeight = getHeight();
+  const aspect = initialWidth / initialHeight;
+
   const camera = new THREE.PerspectiveCamera(30.0, aspect, 0.1, 20.0);
-  // 相机聚焦于数字人上半身/胸部上方视线，VRM 原点通常在脚底，人高约 1.5m，面部约在 1.35m
+  // 相机聚焦于数字人上半身，VRM 面部约在 1.35m
   camera.position.set(0.0, 1.35, 1.25);
   camera.lookAt(0.0, 1.30, 0.0);
 
   const renderer = new THREE.WebGLRenderer({
-    alpha: true,
+    alpha: false,
     antialias: true,
     powerPreference: 'high-performance',
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(initialWidth, initialHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
   container.appendChild(renderer.domElement);
 
   // 灯光配置：柔和主光 + 环境光 + 轮廓背光
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
   scene.add(ambientLight);
 
   const keyLight = new THREE.DirectionalLight(0xfff6ea, 1.5);
   keyLight.position.set(1.0, 2.0, 1.5).normalize();
   scene.add(keyLight);
 
-  const fillLight = new THREE.DirectionalLight(0xdde9ff, 0.8);
+  const fillLight = new THREE.DirectionalLight(0xdde9ff, 0.9);
   fillLight.position.set(-1.0, 1.5, 1.0).normalize();
   scene.add(fillLight);
 
@@ -46,14 +53,20 @@ export function createScene(container: HTMLElement): SceneContext {
 
   const clock = new THREE.Clock();
 
-  // 窗口自适应
-  window.addEventListener('resize', () => {
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height);
-  });
+  // 尺寸动态监听：优先 ResizeObserver，兼顾 window resize
+  const updateSize = () => {
+    const width = getWidth();
+    const height = getHeight();
+    if (width > 0 && height > 0) {
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+  };
+
+  const observer = new ResizeObserver(() => updateSize());
+  observer.observe(container);
+  window.addEventListener('resize', updateSize);
 
   return { scene, camera, renderer, clock };
 }
