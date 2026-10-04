@@ -22,7 +22,7 @@ stages:
         # 使用包含 Java 17 / Android 环境的容器镜像
         image: openjdk:17-jdk-slim
         commands:
-          - apt-get update && apt-get install -y wget unzip
+          - apt-get update && apt-get install -y wget unzip curl
           - bash scripts/build-apk.sh
         artifacts:
           - name: VoxMate-APK
