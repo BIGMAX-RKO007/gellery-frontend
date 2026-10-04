@@ -1,0 +1,30 @@
+# ==============================================================================
+# Gitee Go 流水线配置文件
+# 适用于 Gitee 云端自动化打包 Android APK
+# ==============================================================================
+version: '1.0'
+name: voxmate-build-apk
+displayName: 'VoxMate Android APK 自动打包'
+triggers:
+  trigger: auto
+  push:
+    branches:
+      - master
+      - feat/*
+stages:
+  - name: build-stage
+    displayName: 'APK 编译与打包'
+    strategy: naturally
+    steps:
+      - step: build@maven
+        name: build_apk
+        displayName: '执行 Gradle 构建'
+        # 使用包含 Java 17 / Android 环境的容器镜像
+        image: openjdk:17-jdk-slim
+        commands:
+          - apt-get update && apt-get install -y wget unzip
+          - bash scripts/build-apk.sh
+        artifacts:
+          - name: VoxMate-APK
+            path:
+              - apk/VoxMate-v0.1.0-3D-Avatar.apk
