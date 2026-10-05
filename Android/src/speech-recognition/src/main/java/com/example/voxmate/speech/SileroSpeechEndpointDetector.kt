@@ -27,6 +27,12 @@ class SileroSpeechEndpointDetector(context: Context) : SpeechEndpointDetector {
 
   /** 是否已经向上层发送本轮起声事件。 */
   private var speaking = false
+  /** 保留原始 PCM，补齐起声确认前 500 ms，包含 native 已有回溯且不重复。 */
+  private val preRoll = SpeechPreRollBuffer()
+  /** 已送入 native 的绝对样本数，与 segment.start 使用同一坐标。 */
+  private var processedSamples = 0L
+  /** 本轮首次确认起声的样本位置，用于完整片段输出时恢复弱首字。 */
+  private var detectedAtSample: Long? = null
 
   /** 释放后拒绝继续接收音频。 */
   private var closed = false
@@ -35,6 +41,7 @@ class SileroSpeechEndpointDetector(context: Context) : SpeechEndpointDetector {
   override fun accept(samples: FloatArray): List<SpeechEndpointEvent> {
     check(!closed) { "Speech endpoint detector is closed." }
     if (samples.isEmpty()) return emptyList()
+    preRoll.append(samples)
     val events = mutableListOf<SpeechEndpointEvent>()
     var sourceOffset = 0
     val activeVad = vad ?: createVad().also { vad = it }
@@ -45,9 +52,11 @@ class SileroSpeechEndpointDetector(context: Context) : SpeechEndpointDetector {
       sourceOffset += count
       if (windowLength == WINDOW_SIZE) {
         activeVad.acceptWaveform(window)
+        processedSamples += WINDOW_SIZE
         windowLength = 0
         if (activeVad.isSpeechDetected() && !speaking) {
           speaking = true
+          detectedAtSample = processedSamples
           events += SpeechEndpointEvent.Started
         }
         while (!activeVad.empty()) {
@@ -55,8 +64,11 @@ class SileroSpeechEndpointDetector(context: Context) : SpeechEndpointDetector {
           if (!speaking) events += SpeechEndpointEvent.Started
           speaking = false
           if (segment.samples.isNotEmpty()) {
-            events += SpeechEndpointEvent.Finished(segment.samples.copyOf())
+            events += SpeechEndpointEvent.Finished(
+              preRoll.extend(segment.samples, segment.start.toLong(), detectedAtSample)
+            )
           }
+          detectedAtSample = null
           activeVad.pop()
         }
       }
