@@ -16,18 +16,9 @@
 
 pluginManagement {
   repositories {
-    maven { url = uri("https://maven.aliyun.com/repository/public") }
-    maven { url = uri("https://maven.aliyun.com/repository/google") }
-    maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
-    google {
-      content {
-        includeGroupByRegex("com\\.android.*")
-        includeGroupByRegex("com\\.google.*")
-        includeGroupByRegex("androidx.*")
-      }
-    }
-    mavenCentral()
     gradlePluginPortal()
+    google()
+    mavenCentral()
   }
   resolutionStrategy {
     eachPlugin {
@@ -41,13 +32,13 @@ pluginManagement {
 dependencyResolutionManagement {
   repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
   repositories {
-    maven { url = uri("https://maven.aliyun.com/repository/public") }
-    maven { url = uri("https://maven.aliyun.com/repository/google") }
     google()
     mavenCentral()
     maven("https://jitpack.io") {
       content { includeGroup("com.github.k2-fsa.sherpa-onnx") }
     }
+    maven { url = uri("https://maven.aliyun.com/repository/public") }
+    maven { url = uri("https://maven.aliyun.com/repository/google") }
   }
 }
 
