@@ -100,9 +100,9 @@ class SileroSpeechEndpointDetector(
           sileroVadModelConfig =
             SileroVadModelConfig(
               model = VAD_ASSET,
-              threshold = 0.5f,
+              threshold = turnPolicy.speechThreshold,
               minSilenceDuration = turnPolicy.silenceSeconds,
-              minSpeechDuration = 0.16f,
+              minSpeechDuration = turnPolicy.onsetSeconds,
               windowSize = WINDOW_SIZE,
               maxSpeechDuration = turnPolicy.maximumSeconds + turnPolicy.silenceSeconds + 1f,
             ),

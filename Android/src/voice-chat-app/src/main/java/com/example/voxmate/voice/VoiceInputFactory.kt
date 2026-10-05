@@ -9,7 +9,9 @@ object VoiceInputFactory {
   fun create(context: Context): VoiceAudioInput =
     ContinuousVoiceAudioInput(
       detectorFactory = {
-        NeuralUtteranceDetector(SileroSpeechEndpointDetector(context.applicationContext))
+        NoiseGuardUtteranceDetector(
+          NeuralUtteranceDetector(SileroSpeechEndpointDetector(context.applicationContext))
+        )
       }
     )
 }
