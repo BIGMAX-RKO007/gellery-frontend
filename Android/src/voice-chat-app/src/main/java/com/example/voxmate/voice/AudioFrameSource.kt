@@ -49,6 +49,11 @@ class AndroidAudioFrameSource : AudioFrameSource {
             echo = AcousticEchoCanceler.create(record.audioSessionId)
             echo?.enabled = true
           }
+        } catch (error: RuntimeException) {
+          Log.w("VoiceCapture", "Echo cancellation unavailable", error)
+        }
+        // AEC 失败不应阻止独立降噪效果初始化。
+        try {
           if (NoiseSuppressor.isAvailable()) {
             noise = NoiseSuppressor.create(record.audioSessionId)
             noise?.enabled = true

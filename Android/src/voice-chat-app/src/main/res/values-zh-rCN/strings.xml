@@ -122,4 +122,12 @@
   <string name="persona_store_restored">已恢复原有对话方式</string>
   <string name="persona_store_back">返回</string>
   <string name="persona_store_installed_description">已安装的人物包，可使用对应姓名、性格和说话方式。</string>
+  <string name="call_audio_speaker">扬声器通话</string>
+  <string name="call_audio_headset">耳机通话</string>
+  <string name="call_audio_connecting">正在连接通话音频…</string>
+  <string name="call_audio_focus_unavailable">通话音频已暂停：其他应用正在使用音频。</string>
+  <string name="call_audio_route_unavailable">无法连接通话音频，请重试。</string>
+  <string name="call_audio_echo_warning">设备未启用回声消除，若 AI 被自己的声音打断，请使用耳机。</string>
+  <string name="call_audio_retry">重试音频</string>
+  <string name="call_turn_too_long">本次发言超过两分钟，尚未发送。请点击麦克风重试，缩短单次发言。</string>
 </resources>

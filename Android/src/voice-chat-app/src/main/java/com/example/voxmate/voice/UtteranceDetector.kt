@@ -2,6 +2,7 @@ package com.example.voxmate.voice
 
 import com.example.voxmate.speech.SpeechEndpointDetector
 import com.example.voxmate.speech.SpeechEndpointEvent
+import com.example.voxmate.speech.SpeechTurnPolicy
 import kotlin.math.sqrt
 
 /** 可替换的语音起止检测器，单个录音协程独占；后续可接神经网络 VAD。 */
@@ -22,13 +23,17 @@ sealed interface UtteranceBoundary {
 }
 
 /**
- * 轻量自适应能量分句：160ms 起声、700ms 静音结束、最长 15 秒、200ms 前滚。
+ * 轻量自适应能量端点：160ms 起声、默认 1.4 秒静音结束、200ms 前滚。
  * 不是声纹识别或声学回声消除，嘈杂环境可能误触发；接口可替换为模型 VAD。
+ * @param turnPolicy 完整发言配置；超限明确失败，不拆成多个请求；单个采音线程独占
  */
-class EnergyUtteranceDetector : UtteranceDetector {
+class EnergyUtteranceDetector(
+  /** 和神经网络检测器共享的整轮等待及安全上限策略。 */
+  private val turnPolicy: SpeechTurnPolicy = SpeechTurnPolicy(),
+) : UtteranceDetector {
   /** 最近十帧的前滚缓冲，保留说话开头。 */
   private val preRoll = ArrayDeque<FloatArray>()
-  /** 当前语句帧，最多 750 帧，避免无限录音占用内存。 */
+  /** 当前完整发言帧，受策略安全上限限制，不按十五秒拆分。 */
   private val frames = mutableListOf<FloatArray>()
   /** 非说话时自适应更新的归一化噪声底。 */
   private var noiseFloor = 0.002f
@@ -56,8 +61,9 @@ class EnergyUtteranceDetector : UtteranceDetector {
       return listOf(UtteranceBoundary.Started)
     }
     frames += frame
+    turnPolicy.checkLength(frames.size * 320L, 16_000)
     silence = if (voiced) 0 else silence + 1
-    if (silence < 35 && frames.size < 750) return emptyList()
+    if (silence * 0.02f < turnPolicy.silenceSeconds) return emptyList()
     val audio = FloatArray(frames.size * 320)
     frames.forEachIndexed { index, samples -> samples.copyInto(audio, index * 320) }
     frames.clear()

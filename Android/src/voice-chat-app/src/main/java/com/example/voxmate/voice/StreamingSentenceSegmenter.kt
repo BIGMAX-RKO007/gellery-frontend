@@ -4,7 +4,8 @@ package com.example.voxmate.voice
  * 把语言模型的流式文字增量切分成适合 TTS 的完整短句。
  *
  * 优先在中英文句末标点或换行处切分；长时间没有句末标点时，会在最大长度前最近的逗号
- * 处分段，降低用户等待首段语音的时间。实例不保证线程安全，只能由一个协调器顺序调用。
+ * 处分段，降低用户等待首段语音的时间；无边界时等生成结束，不硬切单词。
+ * 实例不保证线程安全，只能由一个协调器顺序调用。
  */
 class StreamingSentenceSegmenter {
   /** 尚未形成可播报短句的文字缓冲区。 */
@@ -60,12 +61,17 @@ class StreamingSentenceSegmenter {
         }
         return endExclusive
       }
+      // 英文句号只在已看到空白后结束句子，避免流式的 3.14 被读成两段。
+      if (buffer[index] == '.' && index + 1 < buffer.length && buffer[index + 1].isWhitespace()) {
+        return index + 1
+      }
     }
     if (buffer.length < MAX_CHUNK_LENGTH) return 0
     for (index in MAX_CHUNK_LENGTH - 1 downTo MIN_COMMA_SPLIT_LENGTH) {
       if (buffer[index] in SOFT_BOUNDARIES) return index + 1
     }
-    return MAX_CHUNK_LENGTH
+    // 不在字符上限处硬切英文单词或无标点正文；等待完整边界或生成结束。
+    return 0
   }
 
   /** 流式短句切分使用的固定边界集合。 */

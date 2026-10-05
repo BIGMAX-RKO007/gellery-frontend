@@ -32,6 +32,8 @@ data class AvatarCallState(
   val speaking: Boolean = false,
   /** 识别引擎正在后台准备。 */
   val preparing: Boolean = false,
+  /** 本轮设备 AEC 是否启用；null 表示尚未采音，不代表实际消回声效果。 */
+  val echoCancellationEnabled: Boolean? = null,
   /** 当前数字人表情，未指定时恢复自然表情。 */
   val expression: String? = null,
   /** 可由页面重试的国际化错误资源，不含用户录音或敏感配置。 */
@@ -101,8 +103,11 @@ class AvatarCallController(
             }
           }
         }
-        is VoiceAudioInputEvent.Error -> fail(R.string.call_microphone_error)
-        is VoiceAudioInputEvent.EchoCancellation -> Unit
+        is VoiceAudioInputEvent.Error -> fail(
+          if (event.message == "turn_too_long") R.string.call_turn_too_long else R.string.call_microphone_error
+        )
+        is VoiceAudioInputEvent.EchoCancellation ->
+          mutableState.value = mutableState.value.copy(echoCancellationEnabled = event.enabled)
       }
     }
   }
@@ -134,7 +139,7 @@ class AvatarCallController(
       preparation?.cancel()
       input.stopListening()
       interrupt()
-      mutableState.value = mutableState.value.copy(listening = false, preparing = false)
+      mutableState.value = mutableState.value.copy(listening = false, preparing = false, echoCancellationEnabled = null)
       return
     }
     mutableState.value = mutableState.value.copy(preparing = !prepared, error = null)

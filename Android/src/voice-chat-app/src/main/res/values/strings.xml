@@ -124,4 +124,12 @@
   <string name="persona_store_restored">Original conversation style restored</string>
   <string name="persona_store_back">Back</string>
   <string name="persona_store_installed_description">Installed persona package. Select it to apply its identity and speaking style.</string>
+  <string name="call_audio_speaker">Speakerphone</string>
+  <string name="call_audio_headset">Headset audio</string>
+  <string name="call_audio_connecting">Connecting call audio…</string>
+  <string name="call_audio_focus_unavailable">Call audio paused: another app is using audio.</string>
+  <string name="call_audio_route_unavailable">Unable to connect call audio. Please retry.</string>
+  <string name="call_audio_echo_warning">Echo cancellation is unavailable. Use headphones if AI interrupts itself.</string>
+  <string name="call_audio_retry">Retry audio</string>
+  <string name="call_turn_too_long">Your turn exceeded two minutes and was not sent. Tap the microphone to retry with a shorter turn.</string>
 </resources>

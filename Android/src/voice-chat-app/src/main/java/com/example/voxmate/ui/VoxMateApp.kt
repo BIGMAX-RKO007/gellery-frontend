@@ -90,6 +90,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.foundation.layout.imePadding
 import com.example.voxmate.voice.AndroidTextToSpeechOutput
+import com.example.voxmate.voice.AndroidCallAudioRoute
+import com.example.voxmate.ui.avatar.CallAudioNotice
+import com.example.voxmate.ui.avatar.CallAudioVolumeKeys
 import com.example.voxmate.voice.EmotionParser
 import com.example.voxmate.voice.LipSyncDriver
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -178,6 +181,10 @@ private fun VoiceChatHome(
 
   /** 语音资源随导航页面释放，共享模型仍由应用管理。 */
   val speechOutput = remember { AndroidTextToSpeechOutput(context) }
+  /** 页面独占通信音频，确认实际路由后才允许采音和播报。 */
+  val audioRoute = remember { AndroidCallAudioRoute(context) }
+  /** 路由及焦点的可观察状态。 */
+  val audioState by audioRoute.state.collectAsState()
   val call = remember(aiManager) {
     AvatarCallController(
       aiManager, VoiceInputFactory.create(context),
@@ -222,18 +229,22 @@ private fun VoiceChatHome(
    * @param text 输入框文字，提交成功后清空草稿；失败由通话状态展示
    */
   fun handleSendMessage(text: String) {
-    if (sessionStatus !is SessionStatus.Ready || text.isBlank()) return
+    if (sessionStatus !is SessionStatus.Ready || !audioState.ready || !foreground || text.isBlank()) return
     call.send(text)
     inputText = ""
   }
 
-  LaunchedEffect(sessionStatus, isTextMode, foreground, microphoneGranted) {
+  CallAudioVolumeKeys(audioState.ready && foreground)
+  LaunchedEffect(sessionStatus, foreground) {
+    audioRoute.setEnabled(sessionStatus is SessionStatus.Ready && foreground)
+  }
+  LaunchedEffect(sessionStatus, isTextMode, foreground, microphoneGranted, audioState.ready) {
     val ready = sessionStatus is SessionStatus.Ready && !isTextMode && foreground
     if (ready && !microphoneGranted && !permissionRequested) {
       permissionRequested = true
       permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
-    call.setActive(ready && microphoneGranted)
+    call.setActive(ready && microphoneGranted && audioState.ready)
   }
   LaunchedEffect(isTextMode) {
     if (isTextMode) {
@@ -260,6 +271,7 @@ private fun VoiceChatHome(
         Lifecycle.Event.ON_PAUSE -> {
           foreground = false
           call.setActive(false)
+          audioRoute.setEnabled(false)
         }
         else -> Unit
       }
@@ -268,6 +280,7 @@ private fun VoiceChatHome(
     onDispose {
       lifecycleOwner.lifecycle.removeObserver(observer)
       call.close()
+      audioRoute.close()
       lipSyncDriver.stopLipSync()
     }
   }
@@ -548,7 +561,7 @@ private fun VoiceChatHome(
       }
 
       // 5. 中下部沉浸式半透明对话气泡流 (Floating Dialogue Subtitles)
-      Box(
+      Column(
         modifier = Modifier
           .align(Alignment.BottomCenter)
           .navigationBarsPadding()
@@ -557,12 +570,15 @@ private fun VoiceChatHome(
           .padding(horizontal = 16.dp)
           .fillMaxWidth(),
       ) {
+        if (sessionStatus is SessionStatus.Ready) {
+          CallAudioNotice(audioState, if (isTextMode) null else callState.echoCancellationEnabled, audioRoute::retry)
+        }
         if (messages.isEmpty()) {
           Surface(
             shape = RoundedCornerShape(16.dp),
             color = Color.White.copy(alpha = 0.90f),
             shadowElevation = 2.dp,
-            modifier = Modifier.align(Alignment.Center).fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
           ) {
             Text(
               text = stringResource(callState.error ?: when {
@@ -674,7 +690,7 @@ private fun VoiceChatHome(
 
             Button(
               onClick = { handleSendMessage(inputText) },
-              enabled = sessionStatus is SessionStatus.Ready && inputText.isNotBlank(),
+              enabled = sessionStatus is SessionStatus.Ready && audioState.ready && inputText.isNotBlank(),
               shape = CircleShape,
               colors = ButtonDefaults.buttonColors(containerColor = VoxBlue),
               modifier = Modifier.size(44.dp),
@@ -711,7 +727,8 @@ private fun VoiceChatHome(
                   permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                 } else {
                   call.setActive(false)
-                  call.setActive(sessionStatus is SessionStatus.Ready && foreground)
+                  audioRoute.retry()
+                  call.setActive(sessionStatus is SessionStatus.Ready && foreground && audioRoute.state.value.ready)
                 }
               },
             )

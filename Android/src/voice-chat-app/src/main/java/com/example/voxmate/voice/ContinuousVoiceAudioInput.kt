@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import com.example.voxmate.speech.SpeechTurnTooLongException
 
 /**
  * 将持续录音和可替换分句器组合成电话式音频输入，不执行本地语音转写。
@@ -66,7 +67,11 @@ class ContinuousVoiceAudioInput(
           if (token == epoch) {
             events.emit(
               VoiceAudioInputEvent.Error(
-                if (error is SecurityException) ERROR_PERMISSION else ERROR_CAPTURE
+                when (error) {
+                  is SecurityException -> ERROR_PERMISSION
+                  is SpeechTurnTooLongException -> ERROR_TOO_LONG
+                  else -> ERROR_CAPTURE
+                }
               )
             )
           }
@@ -159,5 +164,7 @@ class ContinuousVoiceAudioInput(
 
     /** 麦克风初始化或读取失败错误码。 */
     const val ERROR_CAPTURE = "capture"
+    /** 发言超出端侧安全上限，不自动提交已录的部分。 */
+    const val ERROR_TOO_LONG = "turn_too_long"
   }
 }
