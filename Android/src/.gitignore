@@ -29,3 +29,7 @@ build/
 dist/
 schemas/
 /db_lib/schemas/
+
+# 人物库保留数据库版本结构，便于后续迁移校验；不放开其他模块生成目录。
+!/persona/schemas/
+!/persona/schemas/**

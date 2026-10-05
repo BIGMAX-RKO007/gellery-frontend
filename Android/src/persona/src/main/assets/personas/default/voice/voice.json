@@ -1,0 +1,19 @@
+{
+  "engine": "android-system-tts",
+  "engineVersion": "1",
+  "voiceId": null,
+  "supportedLanguages": [
+    "zh-CN",
+    "en-US",
+    "ja-JP",
+    "ko-KR"
+  ],
+  "speakerEmbedding": null,
+  "previewAudio": null,
+  "prosody": {
+    "speed": 1.12,
+    "pitch": 0.95,
+    "volume": 1.0,
+    "emotion": "impatient-profane-humor"
+  }
+}

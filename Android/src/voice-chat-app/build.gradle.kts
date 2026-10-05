@@ -40,6 +40,7 @@ kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
 
 dependencies {
   implementation(project(":ai-core"))
+  implementation(project(":persona"))
   implementation(project(":speech-recognition"))
   implementation(project(":model-download"))
   implementation(project(":model-manager-ui"))

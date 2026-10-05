@@ -46,6 +46,7 @@ mcp = "0.8.0"
 ktor = "3.4.3"
 tasksVision = "1.0.0"
 room = "2.5.2"
+personaRoom = "2.8.5"
 
 [libraries]
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
@@ -110,6 +111,9 @@ ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 tasks-vision = { group = "com.google.mediapipe", name = "tasks-vision", version.ref = "tasksVision" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-persona-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "personaRoom" }
+androidx-room-persona-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "personaRoom" }
+androidx-room-persona-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "personaRoom" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
 [plugins]

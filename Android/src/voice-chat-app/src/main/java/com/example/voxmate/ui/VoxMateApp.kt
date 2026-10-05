@@ -77,6 +77,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.runtime.collectAsState
 import com.example.voxmate.ai.SessionStatus
 import com.example.voxmate.ai.VoxMateAiSessionManager
+import com.example.voxmate.persona.PersonaRepository
+import com.example.voxmate.persona.PersonaStoreRoute
 import com.example.voxmate.bridge.VrmBridgeController
 import com.example.voxmate.ui.avatar.VrmAvatarView
 import com.example.voxmate.voice.AvatarCallController
@@ -114,7 +116,11 @@ fun VoxMateApp() {
     val navController = rememberNavController()
 
     // 统管端侧本地大模型生命周期（自动嗅探已下载的 Qwen2.5 / Gemma 模型）
-    val aiSessionManager = remember { VoxMateAiSessionManager(context, coroutineScope) }
+    /** 人物资源与会话共享应用生命周期；导航退出商店不会丢失选中状态。 */
+    val personaRepository = remember { PersonaRepository.create(context) }
+    val aiSessionManager = remember {
+      VoxMateAiSessionManager(context, coroutineScope, personaRepository)
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = PageBackground) {
       NavHost(navController = navController, startDestination = "chat") {
@@ -122,6 +128,14 @@ fun VoxMateApp() {
           VoiceChatHome(
             aiManager = aiSessionManager,
             onConfigureModels = { navController.navigate("models") },
+            onOpenPersonaStore = { navController.navigate("personas") },
+          )
+        }
+        composable("personas") {
+          PersonaStoreRoute(
+            repository = personaRepository,
+            aiManager = aiSessionManager,
+            onBack = { navController.popBackStack() },
           )
         }
         composable("models") {
@@ -142,11 +156,14 @@ fun VoxMateApp() {
 private fun VoiceChatHome(
   aiManager: VoxMateAiSessionManager,
   onConfigureModels: () -> Unit,
+  onOpenPersonaStore: () -> Unit,
 ) {
   val context = LocalContext.current
   val coroutineScope = rememberCoroutineScope()
 
   val sessionStatus by aiManager.status.collectAsState()
+  /** 姓名只在明确选中人物后替换主页标题，不替换或重载 VRM 模型。 */
+  val activePersona by aiManager.activePersona.collectAsState()
 
   var bridgeController by remember { mutableStateOf<VrmBridgeController?>(null) }
   var isAvatarReady by remember { mutableStateOf(false) }
@@ -281,6 +298,11 @@ private fun VoiceChatHome(
             coroutineScope.launch { drawerState.close() }
             onConfigureModels()
           },
+          onOpenPersonaStore = {
+            call.setActive(false)
+            coroutineScope.launch { drawerState.close() }
+            onOpenPersonaStore()
+          },
           onSelectRecentChat = { chatText ->
             coroutineScope.launch { drawerState.close() }
             call.setActive(false)
@@ -353,7 +375,8 @@ private fun VoiceChatHome(
               .padding(horizontal = 4.dp, vertical = 4.dp),
           ) {
             Text(
-              text = stringResource(com.example.voxmate.R.string.app_name),
+              text = activePersona?.bundle?.persona?.identity?.name
+                ?: stringResource(com.example.voxmate.R.string.app_name),
               fontSize = 20.sp,
               fontWeight = FontWeight.Bold,
               color = Color(0xFF0F172A),

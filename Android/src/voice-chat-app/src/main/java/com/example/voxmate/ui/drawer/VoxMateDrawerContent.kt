@@ -77,6 +77,14 @@ val ALL_VOXMATE_FEATURES: List<VoxFeatureItem> = listOf(
     requiredModel = "模型清单管理器",
   ),
   VoxFeatureItem(
+    id = "personas",
+    icon = "🎭",
+    titleRes = R.string.persona_store_title,
+    descRes = R.string.menu_persona_store_desc,
+    fullIntro = "",
+    requiredModel = "",
+  ),
+  VoxFeatureItem(
     id = "agent_skills",
     icon = "⚡",
     titleRes = R.string.menu_agent_skills,
@@ -142,6 +150,7 @@ val ALL_VOXMATE_FEATURES: List<VoxFeatureItem> = listOf(
  * @param onNewChat 发起新对话回调
  * @param onSelectFeature 选中特定功能项回调
  * @param onOpenModelManager 打开模型管理回调
+ * @param onOpenPersonaStore 打开人物商店回调；不在抽屉内读取或应用人物
  * @param onSelectRecentChat 选中历史问题回调
  */
 @Composable
@@ -151,6 +160,7 @@ fun VoxMateDrawerContent(
   onNewChat: () -> Unit,
   onSelectFeature: (VoxFeatureItem) -> Unit,
   onOpenModelManager: () -> Unit,
+  onOpenPersonaStore: () -> Unit,
   onSelectRecentChat: (String) -> Unit,
 ) {
   val scrollState = rememberScrollState()
@@ -256,6 +266,8 @@ fun VoxMateDrawerContent(
         onClick = {
           if (feature.id == "models") {
             onOpenModelManager()
+          } else if (feature.id == "personas") {
+            onOpenPersonaStore()
           } else {
             onSelectFeature(feature)
           }
@@ -289,7 +301,7 @@ fun VoxMateDrawerContent(
             Box(
               modifier = Modifier.size(7.dp).background(Color(0xFF34D399), CircleShape)
             )
-          } else if (feature.id == "models") {
+          } else if (feature.id == "models" || feature.id == "personas") {
             Text("➔", color = Color(0xFF8E918F), fontSize = 12.sp)
           }
         }
