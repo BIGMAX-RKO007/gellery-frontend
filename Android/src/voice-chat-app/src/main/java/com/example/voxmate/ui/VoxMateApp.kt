@@ -93,6 +93,7 @@ import com.example.voxmate.voice.AndroidTextToSpeechOutput
 import com.example.voxmate.voice.AndroidCallAudioRoute
 import com.example.voxmate.ui.avatar.CallAudioNotice
 import com.example.voxmate.ui.avatar.CallAudioVolumeKeys
+import com.example.voxmate.ui.avatar.HomeScreenAwake
 import com.example.voxmate.voice.EmotionParser
 import com.example.voxmate.voice.LipSyncDriver
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -235,6 +236,7 @@ private fun VoiceChatHome(
   }
 
   CallAudioVolumeKeys(audioState.ready && foreground)
+  HomeScreenAwake(foreground)
   LaunchedEffect(sessionStatus, foreground) {
     audioRoute.setEnabled(sessionStatus is SessionStatus.Ready && foreground)
   }

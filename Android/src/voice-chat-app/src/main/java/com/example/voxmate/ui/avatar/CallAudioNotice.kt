@@ -19,13 +19,14 @@ import com.example.voxmate.voice.CallAudioRouteState
 @Composable
 fun CallAudioNotice(state: CallAudioRouteState, echoEnabled: Boolean?, onRetry: () -> Unit) {
   Column {
-    Text(stringResource(when {
+    val notice = when {
       state.issue == CallAudioIssue.FOCUS_UNAVAILABLE -> R.string.call_audio_focus_unavailable
       state.issue != null -> R.string.call_audio_route_unavailable
       !state.ready -> R.string.call_audio_connecting
       state.output == CallAudioOutput.HEADSET -> R.string.call_audio_headset
-      else -> R.string.call_audio_speaker
-    }))
+      else -> null
+    }
+    notice?.let { Text(stringResource(it)) }
     if (state.ready && echoEnabled == false) Text(stringResource(R.string.call_audio_echo_warning))
     if (state.issue != null) TextButton(onClick = onRetry) { Text(stringResource(R.string.call_audio_retry)) }
   }
