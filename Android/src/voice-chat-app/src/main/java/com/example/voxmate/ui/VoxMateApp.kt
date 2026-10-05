@@ -50,7 +50,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,6 +59,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -70,18 +75,21 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.runtime.collectAsState
-import com.example.voxmate.ai.CompanionAiChatSession
 import com.example.voxmate.ai.SessionStatus
 import com.example.voxmate.ai.VoxMateAiSessionManager
 import com.example.voxmate.bridge.VrmBridgeController
 import com.example.voxmate.ui.avatar.VrmAvatarView
-import com.example.voxmate.ui.chat.ChatMessage
-import com.example.voxmate.voice.AndroidSpeechInput
-import com.example.voxmate.voice.AndroidSpeechOutput
+import com.example.voxmate.voice.AvatarCallController
+import com.example.voxmate.voice.VoiceInputFactory
+import com.example.voxmate.speech.SenseVoiceRecognitionEngine
+import com.example.voxmate.ui.avatar.CallAudioButton
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.foundation.layout.imePadding
+import com.example.voxmate.voice.AndroidTextToSpeechOutput
 import com.example.voxmate.voice.EmotionParser
 import com.example.voxmate.voice.LipSyncDriver
-import com.example.voxmate.voice.SpeechInputEvent
-import com.example.voxmate.voice.SpeechOutputEvent
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
@@ -90,12 +98,9 @@ import androidx.compose.material3.rememberDrawerState
 import com.example.voxmate.ui.drawer.VoxFeatureIntroDialog
 import com.example.voxmate.ui.drawer.VoxFeatureItem
 import com.example.voxmate.ui.drawer.VoxMateDrawerContent
-import com.google.ai.edge.gallery.aicore.AiChatEvent
-import com.google.ai.edge.gallery.aicore.AiChatRequest
 import com.google.ai.edge.gallery.modelmanagerui.ModelManagerRoute
 import com.google.ai.edge.gallery.modelmanagerui.SelectedModel
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 private val VoxBlue = Color(0xFF2557D6)
 private val PageBackground = Color(0xFFF5F7FB)
@@ -140,159 +145,113 @@ private fun VoiceChatHome(
 ) {
   val context = LocalContext.current
   val coroutineScope = rememberCoroutineScope()
-  val scrollState = rememberScrollState()
 
   val sessionStatus by aiManager.status.collectAsState()
-  val currentModel by aiManager.currentModel.collectAsState()
-  val chatSession = aiManager
 
   var bridgeController by remember { mutableStateOf<VrmBridgeController?>(null) }
   var isAvatarReady by remember { mutableStateOf(false) }
-  var isSpeaking by remember { mutableStateOf(false) }
-  var isListening by remember { mutableStateOf(false) }
-  var isThinking by remember { mutableStateOf(false) }
+  /** 当前数字人镜头、姿态和输入方式只归此页面持有。 */
   var cameraMode by remember { mutableStateOf("upper") }
   var selectedPose by remember { mutableStateOf(0) }
   var isPosesExpanded by remember { mutableStateOf(false) }
-
-  // 消息列表与输入框状态
   var inputText by remember { mutableStateOf("") }
   var isTextMode by remember { mutableStateOf(false) }
-  val messages = remember { mutableStateListOf<ChatMessage>() }
-
-  // Gemini 风格侧边栏抽屉与场景功能介绍弹窗状态
   val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
   var introDialogFeature by remember { mutableStateOf<VoxFeatureItem?>(null) }
 
-  // 语音输入与输出
-  val speechOutput = remember { AndroidSpeechOutput(context, coroutineScope) }
-  val speechInput = remember { AndroidSpeechInput(context, coroutineScope) }
-
+  /** 语音资源随导航页面释放，共享模型仍由应用管理。 */
+  val speechOutput = remember { AndroidTextToSpeechOutput(context) }
+  val call = remember(aiManager) {
+    AvatarCallController(
+      aiManager, VoiceInputFactory.create(context),
+      SenseVoiceRecognitionEngine(context), speechOutput, coroutineScope
+    )
+  }
+  val callState by call.state.collectAsState()
+  val messages = callState.messages
+  val isSpeaking = callState.speaking
+  val isListening = callState.listening
+  val isThinking = callState.thinking
   val lipSyncDriver = remember {
-    LipSyncDriver(bridgeControllerProvider = { bridgeController }, coroutineScope = coroutineScope).apply {
-      attachSpeechOutput(speechOutput)
-    }
+    LipSyncDriver({ bridgeController }, coroutineScope).apply { attachSpeechOutput(speechOutput) }
   }
-
-  // 麦克风动态权限申请 Launcher
+  val lifecycleOwner = LocalLifecycleOwner.current
+  var foreground by remember {
+    mutableStateOf(lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+  }
+  var microphoneGranted by remember {
+    mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+      PackageManager.PERMISSION_GRANTED)
+  }
+  var permissionRequested by remember { mutableStateOf(false) }
+  /** 切换文字模式时主动聚焦，切回语音时清除焦点并收起键盘。 */
+  val inputFocus = remember { FocusRequester() }
+  val focusManager = LocalFocusManager.current
+  val keyboardController = LocalSoftwareKeyboardController.current
+  val textModeDescription = stringResource(com.example.voxmate.R.string.call_text_mode)
+  val voiceModeDescription = stringResource(com.example.voxmate.R.string.call_voice_mode)
   val permissionLauncher = rememberLauncherForActivityResult(
-    contract = ActivityResultContracts.RequestPermission(),
-  ) { isGranted ->
-    if (isGranted) {
-      isListening = true
-      speechInput.startListening()
-    } else {
-      Toast.makeText(context, "请在系统设置中允许麦克风权限以使用语音交互", Toast.LENGTH_SHORT).show()
-    }
+    ActivityResultContracts.RequestPermission()
+  ) { granted ->
+    microphoneGranted = granted
+    if (!granted) Toast.makeText(
+      context, context.getString(com.example.voxmate.R.string.call_permission_required),
+      Toast.LENGTH_SHORT
+    ).show()
   }
 
-  fun requestAndStartListening() {
-    val hasMicPermission = ContextCompat.checkSelfPermission(
-      context,
-      Manifest.permission.RECORD_AUDIO,
-    ) == PackageManager.PERMISSION_GRANTED
-
-    if (!hasMicPermission) {
-      permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-    } else {
-      isListening = true
-      speechInput.startListening()
-    }
-  }
-
-  // 核心发信与 AI 驱动流程
+  /**
+   * 在主线程发送文字，控制器串行取消上一轮；模型未就绪或空白输入会被忽略。
+   * @param text 输入框文字，提交成功后清空草稿；失败由通话状态展示
+   */
   fun handleSendMessage(text: String) {
-    val trimmed = text.trim()
-    if (trimmed.isEmpty() || isThinking || isSpeaking) return
-
-    messages.add(ChatMessage(isUser = true, text = trimmed))
+    if (sessionStatus !is SessionStatus.Ready || text.isBlank()) return
+    call.send(text)
     inputText = ""
-    isThinking = true
-    bridgeController?.setExpression("relaxed")
-
-    coroutineScope.launch {
-      val assistantMsgId = UUID.randomUUID().toString()
-      messages.add(ChatMessage(id = assistantMsgId, isUser = false, text = "", isStreaming = true))
-
-      val fullResponse = StringBuilder()
-      chatSession.send(AiChatRequest(text = trimmed)).collect { event ->
-        when (event) {
-          is AiChatEvent.TextDelta -> {
-            fullResponse.append(event.text)
-            val parsed = EmotionParser.parse(fullResponse.toString())
-            parsed.expression?.let { bridgeController?.setExpression(it) }
-            val index = messages.indexOfFirst { it.id == assistantMsgId }
-            if (index >= 0) {
-              messages[index] = messages[index].copy(text = parsed.cleanText)
-            }
-          }
-          is AiChatEvent.Completed -> {
-            isThinking = false
-            val parsed = EmotionParser.parse(fullResponse.toString())
-            parsed.expression?.let { bridgeController?.setExpression(it) }
-            val index = messages.indexOfFirst { it.id == assistantMsgId }
-            if (index >= 0) {
-              messages[index] = messages[index].copy(text = parsed.cleanText, isStreaming = false)
-            }
-            speechOutput.speak(parsed.cleanText)
-          }
-          is AiChatEvent.Cancelled -> {
-            isThinking = false
-            val index = messages.indexOfFirst { it.id == assistantMsgId }
-            if (index >= 0) {
-              messages[index] = messages[index].copy(isStreaming = false)
-            }
-          }
-        }
-      }
-    }
   }
 
-  // 监听语音识别结果
-  LaunchedEffect(speechInput) {
-    speechInput.events.collect { event ->
+  LaunchedEffect(sessionStatus, isTextMode, foreground, microphoneGranted) {
+    val ready = sessionStatus is SessionStatus.Ready && !isTextMode && foreground
+    if (ready && !microphoneGranted && !permissionRequested) {
+      permissionRequested = true
+      permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    }
+    call.setActive(ready && microphoneGranted)
+  }
+  LaunchedEffect(isTextMode) {
+    if (isTextMode) {
+      inputFocus.requestFocus()
+      keyboardController?.show()
+    } else {
+      focusManager.clearFocus()
+      keyboardController?.hide()
+    }
+  }
+  LaunchedEffect(callState.expression, bridgeController) {
+    callState.expression?.let { bridgeController?.setExpression(it) }
+      ?: bridgeController?.resetExpression()
+  }
+  DisposableEffect(lifecycleOwner, call) {
+    val observer = LifecycleEventObserver { _, event ->
       when (event) {
-        is SpeechInputEvent.PartialText -> {
-          // 实时展示正在转写的文字
-          inputText = event.text
+        Lifecycle.Event.ON_RESUME -> {
+          microphoneGranted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.RECORD_AUDIO
+          ) == PackageManager.PERMISSION_GRANTED
+          foreground = true
         }
-        is SpeechInputEvent.FinalText -> {
-          isListening = false
-          handleSendMessage(event.text)
+        Lifecycle.Event.ON_PAUSE -> {
+          foreground = false
+          call.setActive(false)
         }
-        is SpeechInputEvent.Error -> {
-          isListening = false
-        }
+        else -> Unit
       }
     }
-  }
-
-  // 监听语音发声状态
-  LaunchedEffect(speechOutput) {
-    speechOutput.events.collect { event ->
-      when (event) {
-        is SpeechOutputEvent.Started -> isSpeaking = true
-        is SpeechOutputEvent.Completed, is SpeechOutputEvent.Error -> {
-          isSpeaking = false
-          bridgeController?.resetExpression()
-        }
-      }
-    }
-  }
-
-  // 自动滚动到最新消息
-  LaunchedEffect(messages.size) {
-    if (messages.isNotEmpty()) {
-      scrollState.animateScrollTo(scrollState.maxValue)
-    }
-  }
-
-  DisposableEffect(speechOutput, speechInput) {
+    lifecycleOwner.lifecycle.addObserver(observer)
     onDispose {
+      lifecycleOwner.lifecycle.removeObserver(observer)
+      call.close()
       lipSyncDriver.stopLipSync()
-      speechOutput.release()
-      speechInput.release()
-      chatSession.stop()
     }
   }
 
@@ -308,12 +267,7 @@ private fun VoiceChatHome(
           recentChats = messages.filter { it.isUser }.map { it.text }.reversed().distinct(),
           onNewChat = {
             coroutineScope.launch { drawerState.close() }
-            speechOutput.stop()
-            speechInput.stopListening()
-            isSpeaking = false
-            isListening = false
-            isThinking = false
-            messages.clear()
+            call.reset()
             bridgeController?.resetPose()
             bridgeController?.resetExpression()
           },
@@ -329,6 +283,7 @@ private fun VoiceChatHome(
           },
           onSelectRecentChat = { chatText ->
             coroutineScope.launch { drawerState.close() }
+            call.setActive(false)
             inputText = chatText
             isTextMode = true
           },
@@ -431,9 +386,9 @@ private fun VoiceChatHome(
             ) {
               val (dotColor, label) = when (val s = sessionStatus) {
                 is SessionStatus.Ready -> ReadyGreen to s.modelName
-                is SessionStatus.Loading -> Color(0xFFE59B2F) to "装载中..."
-                is SessionStatus.Error -> Color(0xFFE53935) to "模型异常"
-                SessionStatus.Idle -> Color(0xFF64748B) to "智能伴侣"
+                is SessionStatus.Loading -> Color(0xFFE59B2F) to stringResource(com.example.voxmate.R.string.call_loading_model)
+                is SessionStatus.Error -> Color(0xFFE53935) to stringResource(com.example.voxmate.R.string.call_model_error)
+                SessionStatus.Idle -> Color(0xFF64748B) to stringResource(com.example.voxmate.R.string.app_tagline)
               }
               Box(modifier = Modifier.size(6.dp).background(dotColor, CircleShape))
               Spacer(Modifier.width(6.dp))
@@ -449,12 +404,7 @@ private fun VoiceChatHome(
           // 发起新对话快捷圆形按钮
           Surface(
             onClick = {
-              speechOutput.stop()
-              speechInput.stopListening()
-              isSpeaking = false
-              isListening = false
-              isThinking = false
-              messages.clear()
+              call.reset()
               bridgeController?.resetPose()
               bridgeController?.resetExpression()
             },
@@ -559,13 +509,14 @@ private fun VoiceChatHome(
           verticalAlignment = Alignment.CenterVertically,
         ) {
           val (badgeColor, badgeText) = when {
-            isListening -> Color(0xFFE53935) to "正在倾听..."
-            isThinking -> Color(0xFF2557D6) to "端侧思考中..."
-            isSpeaking -> Color(0xFFE59B2F) to "正在发声..."
-            sessionStatus is SessionStatus.Loading -> Color(0xFFE59B2F) to "模型装载中..."
-            sessionStatus is SessionStatus.Ready -> ReadyGreen to "端侧大模型就绪"
-            isAvatarReady -> ReadyGreen to "3D AI 数字人"
-            else -> Color.Gray to "加载中..."
+            callState.preparing -> Color(0xFFE59B2F) to stringResource(com.example.voxmate.R.string.call_preparing)
+            isThinking -> Color(0xFF2557D6) to stringResource(com.example.voxmate.R.string.call_thinking)
+            isSpeaking -> Color(0xFFE59B2F) to stringResource(com.example.voxmate.R.string.voice_demo_speaking)
+            isListening -> Color(0xFF2557D6) to stringResource(com.example.voxmate.R.string.chat_listening)
+            sessionStatus is SessionStatus.Loading -> Color(0xFFE59B2F) to stringResource(com.example.voxmate.R.string.call_loading_model)
+            sessionStatus is SessionStatus.Ready -> ReadyGreen to stringResource(com.example.voxmate.R.string.call_model_ready)
+            isAvatarReady -> ReadyGreen to stringResource(com.example.voxmate.R.string.avatar_title)
+            else -> Color.Gray to stringResource(com.example.voxmate.R.string.avatar_loading)
           }
           Box(Modifier.size(7.dp).background(badgeColor, CircleShape))
           Spacer(Modifier.width(6.dp))
@@ -579,6 +530,7 @@ private fun VoiceChatHome(
           .align(Alignment.BottomCenter)
           .navigationBarsPadding()
           .padding(bottom = if (isPosesExpanded) 360.dp else 96.dp)
+          .imePadding()
           .padding(horizontal = 16.dp)
           .fillMaxWidth(),
       ) {
@@ -590,7 +542,13 @@ private fun VoiceChatHome(
             modifier = Modifier.align(Alignment.Center).fillMaxWidth(),
           ) {
             Text(
-              text = stringResource(com.example.voxmate.R.string.chat_empty_prompt),
+              text = stringResource(callState.error ?: when {
+                sessionStatus is SessionStatus.Loading -> com.example.voxmate.R.string.call_loading_model
+                sessionStatus !is SessionStatus.Ready -> com.example.voxmate.R.string.select_model_and_configure
+                !microphoneGranted && !isTextMode -> com.example.voxmate.R.string.call_permission_required
+                callState.preparing -> com.example.voxmate.R.string.call_preparing
+                else -> com.example.voxmate.R.string.call_empty_prompt
+              }),
               modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
               fontSize = 13.sp,
               color = Color(0xFF64748B),
@@ -605,6 +563,13 @@ private fun VoiceChatHome(
               .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
           ) {
+            callState.error?.let { error ->
+              Text(
+                text = stringResource(error),
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.background(Color.White.copy(alpha = 0.9f)).padding(8.dp),
+              )
+            }
             messages.takeLast(3).forEach { msg ->
               Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -624,7 +589,7 @@ private fun VoiceChatHome(
                 ) {
                   val cleanMsgText = if (msg.isUser) msg.text else EmotionParser.parse(msg.text).cleanText
                   Text(
-                    text = if (msg.isStreaming && cleanMsgText.isEmpty()) "正在思考中..." else cleanMsgText,
+                    text = if (msg.isStreaming && cleanMsgText.isEmpty()) stringResource(com.example.voxmate.R.string.call_thinking) else cleanMsgText,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     fontSize = 14.sp,
                     color = if (msg.isUser) Color.White else Color(0xFF1E293B),
@@ -643,6 +608,7 @@ private fun VoiceChatHome(
           .align(Alignment.BottomCenter)
           .navigationBarsPadding()
           .padding(horizontal = 16.dp, vertical = 12.dp)
+          .imePadding()
           .fillMaxWidth(),
         shape = RoundedCornerShape(26.dp),
         color = Color.White.copy(alpha = 0.95f),
@@ -659,7 +625,7 @@ private fun VoiceChatHome(
               onClick = { isTextMode = false },
               shape = CircleShape,
               color = Color(0xFFF1F5F9),
-              modifier = Modifier.size(44.dp),
+              modifier = Modifier.size(44.dp).semantics { contentDescription = voiceModeDescription },
             ) {
               Box(contentAlignment = Alignment.Center) {
                 Text("🎤", fontSize = 18.sp)
@@ -670,7 +636,7 @@ private fun VoiceChatHome(
               value = inputText,
               onValueChange = { inputText = it },
               placeholder = { Text(stringResource(com.example.voxmate.R.string.chat_input_hint), fontSize = 13.sp) },
-              modifier = Modifier.weight(1f),
+              modifier = Modifier.weight(1f).focusRequester(inputFocus),
               shape = RoundedCornerShape(18.dp),
               singleLine = true,
               keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -685,6 +651,7 @@ private fun VoiceChatHome(
 
             Button(
               onClick = { handleSendMessage(inputText) },
+              enabled = sessionStatus is SessionStatus.Ready && inputText.isNotBlank(),
               shape = CircleShape,
               colors = ButtonDefaults.buttonColors(containerColor = VoxBlue),
               modifier = Modifier.size(44.dp),
@@ -701,50 +668,30 @@ private fun VoiceChatHome(
           ) {
             // 键盘输入切换
             Surface(
-              onClick = { isTextMode = true },
+              onClick = { call.setActive(false); isTextMode = true },
               shape = CircleShape,
               color = Color(0xFFF1F5F9),
-              modifier = Modifier.size(46.dp),
+              modifier = Modifier.size(46.dp).semantics { contentDescription = textModeDescription },
             ) {
               Box(contentAlignment = Alignment.Center) {
                 Text("⌨️", fontSize = 20.sp)
               }
             }
 
-            // 中心语音大按键
-            Button(
+            CallAudioButton(
+              listening = isListening,
+              userSpeaking = callState.userSpeaking,
+              busy = callState.preparing || isThinking,
+              speaking = isSpeaking,
               onClick = {
-                if (isListening) {
-                  speechInput.stopListening()
-                  isListening = false
-                } else if (isSpeaking) {
-                  speechOutput.stop()
-                  isSpeaking = false
+                if (!microphoneGranted) {
+                  permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                 } else {
-                  requestAndStartListening()
+                  call.setActive(false)
+                  call.setActive(sessionStatus is SessionStatus.Ready && foreground)
                 }
               },
-              modifier = Modifier.height(52.dp).weight(1f).padding(horizontal = 10.dp),
-              shape = RoundedCornerShape(22.dp),
-              colors = ButtonDefaults.buttonColors(
-                containerColor = when {
-                  isListening -> Color(0xFFE53935)
-                  isSpeaking -> Color(0xFFE59B2F)
-                  else -> ReadyGreen
-                }
-              ),
-              elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-            ) {
-              Text(
-                text = when {
-                  isListening -> "🎙 正在倾听... 点击发送"
-                  isSpeaking -> "🔊 正在说话... 点击打断"
-                  else -> "🎙 点击开始语音"
-                },
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-              )
-            }
+            )
 
             // 姿态展开切换
             Surface(

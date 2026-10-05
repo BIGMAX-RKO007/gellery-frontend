@@ -40,11 +40,13 @@ kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_11) } }
 
 dependencies {
   implementation(project(":ai-core"))
+  implementation(project(":speech-recognition"))
   implementation(project(":model-download"))
   implementation(project(":model-manager-ui"))
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
+  implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.androidx.activity.compose)
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.ui)
@@ -55,4 +57,6 @@ dependencies {
   implementation(libs.androidx.webkit)
 
   debugImplementation(libs.androidx.ui.tooling)
+  testImplementation(libs.junit)
+  testImplementation(libs.kotlinx.coroutines.test)
 }

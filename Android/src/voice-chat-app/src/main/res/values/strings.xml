@@ -66,4 +66,19 @@
   <string name="feature_intro_dialog_title">Feature Introduction</string>
   <string name="feature_intro_dialog_confirm">Go to Model Manager</string>
   <string name="feature_intro_dialog_dismiss">Close</string>
+  <string name="call_permission_required">Allow microphone access to use voice calls.</string>
+  <string name="call_recognition_error">Speech recognition unavailable. Tap the circle to retry.</string>
+  <string name="call_microphone_error">Microphone unavailable. Tap the circle to retry.</string>
+  <string name="call_playback_error">Speech playback failed. The reply is still available as text.</string>
+  <string name="call_generation_error">The reply failed. Please try again.</string>
+  <string name="call_preparing">Preparing offline speech recognition…</string>
+  <string name="call_empty_prompt">Speak naturally. Your words are sent automatically. You can interrupt replies.</string>
+  <string name="call_loading_model">Loading model…</string>
+  <string name="call_model_error">Model error</string>
+  <string name="call_model_ready">On-device model ready</string>
+  <string name="call_thinking">Thinking…</string>
+  <string name="call_listening_description">Listening continuously. Tap to retry.</string>
+  <string name="call_retry">Retry microphone</string>
+  <string name="call_text_mode">Switch to text and stop microphone</string>
+  <string name="call_voice_mode">Switch to automatic voice call</string>
 </resources>

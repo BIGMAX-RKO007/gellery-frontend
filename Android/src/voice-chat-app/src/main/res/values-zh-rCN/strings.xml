@@ -64,4 +64,19 @@
   <string name="feature_intro_dialog_title">功能场景说明</string>
   <string name="feature_intro_dialog_confirm">前往模型管理</string>
   <string name="feature_intro_dialog_dismiss">知道了</string>
+  <string name="call_permission_required">请允许麦克风权限以使用语音通话。</string>
+  <string name="call_recognition_error">语音识别暂不可用，点击圆形按钮重试。</string>
+  <string name="call_microphone_error">麦克风暂不可用，点击圆形按钮重试。</string>
+  <string name="call_playback_error">语音播放失败，你仍可以阅读文字回复。</string>
+  <string name="call_generation_error">回复失败，请重试。</string>
+  <string name="call_preparing">正在准备离线语音识别…</string>
+  <string name="call_empty_prompt">直接说话，说完自动发送；AI 回复时也可以插话打断。</string>
+  <string name="call_loading_model">正在加载模型…</string>
+  <string name="call_model_error">模型异常</string>
+  <string name="call_model_ready">端侧大模型就绪</string>
+  <string name="call_thinking">正在思考…</string>
+  <string name="call_listening_description">正在持续采音，点击可重试。</string>
+  <string name="call_retry">重试麦克风</string>
+  <string name="call_text_mode">切换文字输入并停止麦克风</string>
+  <string name="call_voice_mode">切换自动语音通话</string>
 </resources>

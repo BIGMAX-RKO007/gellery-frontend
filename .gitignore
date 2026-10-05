@@ -1,4 +1,8 @@
 .DS_Store
+# 内置语音模型仅由本地和构建环境提供，避免超过 Gitee 单文件限制。
+/Android/src/speech-recognition/src/main/assets/speech/sensevoice/model.int8.onnx
+# Kotlin 编译缓存不属于源码。
+/Android/src/.kotlin/
 node_modules/
 **/node_modules/
 vrm-avatar-web/dist/

@@ -45,6 +45,9 @@ dependencyResolutionManagement {
     maven { url = uri("https://maven.aliyun.com/repository/google") }
     google()
     mavenCentral()
+    maven("https://jitpack.io") {
+      content { includeGroup("com.github.k2-fsa.sherpa-onnx") }
+    }
   }
 }
 
@@ -55,4 +58,5 @@ include(":ai-core")
 include(":model-download")
 include(":model-manager-ui")
 include(":voice-chat-app")
+include(":speech-recognition")
 include(":db_lib")
