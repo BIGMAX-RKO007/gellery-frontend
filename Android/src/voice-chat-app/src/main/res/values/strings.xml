@@ -132,4 +132,30 @@
   <string name="call_audio_echo_warning">Echo cancellation is unavailable. Use headphones if AI interrupts itself.</string>
   <string name="call_audio_retry">Retry audio</string>
   <string name="call_turn_too_long">Your turn exceeded two minutes and was not sent. Tap the microphone to retry with a shorter turn.</string>
+
+  <!-- Voice & Speech Settings -->
+  <string name="menu_voice_settings">Voice &amp; Speech</string>
+  <string name="menu_voice_settings_desc">Speed, pitch, and voice styles</string>
+  <string name="voice_settings_title">Voice &amp; Speech Settings</string>
+  <string name="voice_settings_subtitle">Customize voice speed, pitch, and timbres</string>
+  <string name="voice_settings_speech_rate">Speech Speed</string>
+  <string name="voice_settings_speech_rate_format">%.2fx</string>
+  <string name="voice_settings_rate_slow">Slow</string>
+  <string name="voice_settings_rate_natural">Natural (Recommended)</string>
+  <string name="voice_settings_rate_fast">Fast</string>
+  <string name="voice_settings_pitch">Voice Pitch</string>
+  <string name="voice_settings_pitch_format">%.2fx</string>
+  <string name="voice_settings_pitch_deep">Deep</string>
+  <string name="voice_settings_pitch_natural">Natural</string>
+  <string name="voice_settings_pitch_bright">Bright &amp; Sweet</string>
+  <string name="voice_settings_voice_selection">Voice Timbre</string>
+  <string name="voice_settings_voice_auto">Auto Quality Best (Recommended)</string>
+  <string name="voice_settings_voice_auto_desc">Automatically select the highest quality on-device voice</string>
+  <string name="voice_settings_tag_hq">HQ</string>
+  <string name="voice_settings_tag_network">Online</string>
+  <string name="voice_settings_preview">Preview Voice</string>
+  <string name="voice_settings_preview_sample">Hello! I am VoxMate, your 3D voice companion. How does this voice sound?</string>
+  <string name="voice_settings_reset">Reset to Default</string>
+  <string name="voice_settings_system_tts">System TTS Settings</string>
+  <string name="voice_settings_system_tts_tip">Tap to open phone settings and download higher quality voice data</string>
 </resources>

@@ -104,6 +104,8 @@ import androidx.compose.material3.rememberDrawerState
 import com.example.voxmate.ui.drawer.VoxFeatureIntroDialog
 import com.example.voxmate.ui.drawer.VoxFeatureItem
 import com.example.voxmate.ui.drawer.VoxMateDrawerContent
+import com.example.voxmate.ui.settings.VoiceSettingsSheet
+import com.example.voxmate.voice.VoiceSettingsRepository
 import com.google.ai.edge.gallery.modelmanagerui.ModelManagerRoute
 import com.google.ai.edge.gallery.modelmanagerui.SelectedModel
 import kotlinx.coroutines.launch
@@ -180,8 +182,17 @@ private fun VoiceChatHome(
   val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
   var introDialogFeature by remember { mutableStateOf<VoxFeatureItem?>(null) }
 
+  val voiceSettingsRepository = remember { VoiceSettingsRepository(context) }
+  val voiceSettings by voiceSettingsRepository.settings.collectAsState()
+  var isVoiceSettingsOpen by remember { mutableStateOf(false) }
+
   /** 语音资源随导航页面释放，共享模型仍由应用管理。 */
-  val speechOutput = remember { AndroidTextToSpeechOutput(context) }
+  val speechOutput = remember { AndroidTextToSpeechOutput(context, initialSettings = voiceSettings) }
+  val availableVoices by speechOutput.availableVoices.collectAsState(initial = emptyList())
+
+  LaunchedEffect(voiceSettings) {
+    speechOutput.applySettings(voiceSettings)
+  }
   /** 页面独占通信音频，确认实际路由后才允许采音和播报。 */
   val audioRoute = remember { AndroidCallAudioRoute(context) }
   /** 路由及焦点的可观察状态。 */
@@ -317,6 +328,10 @@ private fun VoiceChatHome(
             call.setActive(false)
             coroutineScope.launch { drawerState.close() }
             onOpenPersonaStore()
+          },
+          onOpenVoiceSettings = {
+            coroutineScope.launch { drawerState.close() }
+            isVoiceSettingsOpen = true
           },
           onSelectRecentChat = { chatText ->
             coroutineScope.launch { drawerState.close() }
@@ -454,6 +469,20 @@ private fun VoiceChatHome(
           ) {
             Box(contentAlignment = Alignment.Center) {
               Text("✏️", fontSize = 15.sp)
+            }
+          }
+
+          // 语音与声音设置快捷圆形按钮
+          Surface(
+            onClick = { isVoiceSettingsOpen = true },
+            shape = CircleShape,
+            color = Color.White.copy(alpha = 0.92f),
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+            shadowElevation = 2.dp,
+            modifier = Modifier.size(38.dp),
+          ) {
+            Box(contentAlignment = Alignment.Center) {
+              Text("🔊", fontSize = 15.sp)
             }
           }
         }
@@ -846,6 +875,24 @@ private fun VoiceChatHome(
         introDialogFeature = null
         onConfigureModels()
       },
+    )
+  }
+
+  // 声音与语速个性化设置底部面板
+  if (isVoiceSettingsOpen) {
+    VoiceSettingsSheet(
+      settings = voiceSettings,
+      availableVoices = availableVoices,
+      onSettingsChanged = { updated ->
+        voiceSettingsRepository.updateSettings(updated)
+      },
+      onPreviewSpeech = { sampleText ->
+        speechOutput.speak(sampleText, queue = false)
+      },
+      onResetDefaults = {
+        voiceSettingsRepository.resetToDefault()
+      },
+      onDismiss = { isVoiceSettingsOpen = false },
     )
   }
 }

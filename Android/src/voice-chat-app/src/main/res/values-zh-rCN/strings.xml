@@ -130,4 +130,30 @@
   <string name="call_audio_echo_warning">设备未启用回声消除，若 AI 被自己的声音打断，请使用耳机。</string>
   <string name="call_audio_retry">重试音频</string>
   <string name="call_turn_too_long">本次发言超过两分钟，尚未发送。请点击麦克风重试，缩短单次发言。</string>
+
+  <!-- 声音与语音设置 -->
+  <string name="menu_voice_settings">声音与语速设置</string>
+  <string name="menu_voice_settings_desc">调节语速、音调与音色偏好</string>
+  <string name="voice_settings_title">声音与语速设置</string>
+  <string name="voice_settings_subtitle">自定义语音播报的语速、音调及音色</string>
+  <string name="voice_settings_speech_rate">播报语速</string>
+  <string name="voice_settings_speech_rate_format">%.2f 倍速</string>
+  <string name="voice_settings_rate_slow">稍慢</string>
+  <string name="voice_settings_rate_natural">自然流畅 (推荐)</string>
+  <string name="voice_settings_rate_fast">飞快</string>
+  <string name="voice_settings_pitch">发声音调</string>
+  <string name="voice_settings_pitch_format">%.2f 倍</string>
+  <string name="voice_settings_pitch_deep">低沉成熟</string>
+  <string name="voice_settings_pitch_natural">自然基准</string>
+  <string name="voice_settings_pitch_bright">清亮甜美</string>
+  <string name="voice_settings_voice_selection">音色偏好</string>
+  <string name="voice_settings_voice_auto">自动优选高品质 (推荐)</string>
+  <string name="voice_settings_voice_auto_desc">自动挑选当前设备最高清晰度的离线音色</string>
+  <string name="voice_settings_tag_hq">高保真</string>
+  <string name="voice_settings_tag_network">在线</string>
+  <string name="voice_settings_preview">试听发音</string>
+  <string name="voice_settings_preview_sample">你好！我是你的 3D 数字人伙伴声伴，这是我调整后的新声音，听起来自然吗？</string>
+  <string name="voice_settings_reset">恢复默认推荐</string>
+  <string name="voice_settings_system_tts">手机系统 TTS 设置</string>
+  <string name="voice_settings_system_tts_tip">点击打开手机系统文字转语音设置，可下载安装更高品质的语音包</string>
 </resources>

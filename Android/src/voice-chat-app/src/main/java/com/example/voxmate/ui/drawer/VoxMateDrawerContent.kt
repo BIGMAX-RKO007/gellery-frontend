@@ -85,6 +85,14 @@ val ALL_VOXMATE_FEATURES: List<VoxFeatureItem> = listOf(
     requiredModel = "",
   ),
   VoxFeatureItem(
+    id = "voice_settings",
+    icon = "⚙️",
+    titleRes = R.string.menu_voice_settings,
+    descRes = R.string.menu_voice_settings_desc,
+    fullIntro = "",
+    requiredModel = "",
+  ),
+  VoxFeatureItem(
     id = "agent_skills",
     icon = "⚡",
     titleRes = R.string.menu_agent_skills,
@@ -161,6 +169,7 @@ fun VoxMateDrawerContent(
   onSelectFeature: (VoxFeatureItem) -> Unit,
   onOpenModelManager: () -> Unit,
   onOpenPersonaStore: () -> Unit,
+  onOpenVoiceSettings: () -> Unit = {},
   onSelectRecentChat: (String) -> Unit,
 ) {
   val scrollState = rememberScrollState()
@@ -268,6 +277,8 @@ fun VoxMateDrawerContent(
             onOpenModelManager()
           } else if (feature.id == "personas") {
             onOpenPersonaStore()
+          } else if (feature.id == "voice_settings") {
+            onOpenVoiceSettings()
           } else {
             onSelectFeature(feature)
           }

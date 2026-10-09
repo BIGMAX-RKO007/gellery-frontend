@@ -7,12 +7,16 @@ import android.os.Looper
 import android.media.AudioAttributes
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.speech.tts.Voice
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * 使用 Android 系统文字转语音服务实现 [SpeechOutput]。
@@ -22,10 +26,12 @@ import kotlinx.coroutines.flow.asSharedFlow
  *
  * @param context 用于连接系统 TTS 服务的 Android Context
  * @param locale 默认播报语言，通常跟随系统语言
+ * @param initialSettings 初始播报配置，包含自定义语速、音调与可选音色
  */
 class AndroidTextToSpeechOutput(
   context: Context,
   private val locale: Locale = Locale.getDefault(),
+  initialSettings: VoiceSettings = VoiceSettings(),
 ) : SpeechOutput {
   /** 不会持有 Activity 的 Application Context。 */
   private val appContext = context.applicationContext
@@ -38,6 +44,15 @@ class AndroidTextToSpeechOutput(
 
   /** 供页面协调器收集的只读播报事件流。 */
   override val events: Flow<SpeechOutputEvent> = mutableEvents.asSharedFlow()
+
+  /** 当前系统检测到的可用音色列表流。 */
+  private val _availableVoices = MutableStateFlow<List<VoiceOption>>(emptyList())
+
+  /** 供设置页面观察的可用系统音色列表。 */
+  override val availableVoices: StateFlow<List<VoiceOption>> = _availableVoices.asStateFlow()
+
+  /** 当前生效的语音配置参数。 */
+  private var currentSettings: VoiceSettings = initialSettings
 
   /** 为每个系统播报请求生成唯一标识，便于判断整个队列是否结束。 */
   private val utteranceIds = AtomicLong(0L)
@@ -170,9 +185,114 @@ class AndroidTextToSpeechOutput(
     }
     ready = true
     initializationError = null
+    refreshAvailableVoices(engine)
+    applySettingsInternal(engine, currentSettings)
     val queued = pendingRequests.toList()
     pendingRequests.clear()
     queued.forEach(::submit)
+  }
+
+  /**
+   * 动态应用用户设置的语速、音调及音色。
+   *
+   * 可在任意线程调用，内部统一调度至主线程执行以保证底层 TTS 调用安全。
+   *
+   * @param settings 用户调整后的语音配置
+   */
+  override fun applySettings(settings: VoiceSettings) {
+    mainHandler.post {
+      currentSettings = settings
+      val engine = textToSpeech
+      if (initialized && !released.get() && engine != null) {
+        applySettingsInternal(engine, settings)
+      }
+    }
+  }
+
+  /**
+   * 在主线程直接更新系统 TTS 引擎的语速、音调与音色。
+   */
+  private fun applySettingsInternal(engine: TextToSpeech, settings: VoiceSettings) {
+    try {
+      engine.setSpeechRate(settings.speechRate)
+      engine.setPitch(settings.pitch)
+
+      val allVoices = engine.voices ?: emptySet()
+      val targetVoice = if (!settings.voiceName.isNullOrBlank()) {
+        allVoices.firstOrNull { it.name == settings.voiceName }
+      } else {
+        findBestVoice(allVoices)
+      }
+
+      if (targetVoice != null) {
+        engine.voice = targetVoice
+      }
+    } catch (_: Exception) {
+      // 容错处理：部分机型厂商特定引擎不支持或抛出异常时不崩溃
+    }
+  }
+
+  /**
+   * 提取当前系统引擎支持的且匹配当前语言的音色列表。
+   */
+  private fun refreshAvailableVoices(engine: TextToSpeech) {
+    try {
+      val rawVoices = engine.voices ?: emptySet()
+      val targetLang = selectedLocale.language
+      val matched = rawVoices.filter { voice ->
+        voice.locale.language.equals(targetLang, ignoreCase = true)
+      }
+      val options = matched.map { voice ->
+        val isHigh = voice.quality == Voice.QUALITY_VERY_HIGH || voice.quality == Voice.QUALITY_HIGH
+        val displayName = buildVoiceDisplayName(voice)
+        VoiceOption(
+          name = voice.name,
+          displayName = displayName,
+          isHighQuality = isHigh,
+          requiresNetwork = voice.isNetworkConnectionRequired,
+          locale = voice.locale.toLanguageTag(),
+        )
+      }.sortedWith(compareByDescending<VoiceOption> { it.isHighQuality }.thenBy { it.requiresNetwork })
+
+      _availableVoices.value = options
+    } catch (_: Exception) {
+      _availableVoices.value = emptyList()
+    }
+  }
+
+  /**
+   * 遍历音色集合，按高保真、本地离线与名称特征自动选择推荐音色。
+   */
+  private fun findBestVoice(voices: Set<Voice>): Voice? {
+    val targetLang = selectedLocale.language
+    val candidates = voices.filter { it.locale.language.equals(targetLang, ignoreCase = true) }
+    if (candidates.isEmpty()) return null
+
+    return candidates.maxByOrNull { voice ->
+      var score = 0
+      if (!voice.isNetworkConnectionRequired) score += 50
+      if (voice.quality == Voice.QUALITY_VERY_HIGH) score += 40
+      else if (voice.quality == Voice.QUALITY_HIGH) score += 20
+      if (voice.name.contains("neural", ignoreCase = true)) score += 30
+      if (voice.name.contains("female", ignoreCase = true) || voice.name.contains("cmn", ignoreCase = true)) score += 15
+      score
+    }
+  }
+
+  /**
+   * 构造对用户友好的音色名称。
+   */
+  private fun buildVoiceDisplayName(voice: Voice): String {
+    val rawName = voice.name
+    val country = voice.locale.country
+    val tag = if (country.isNotBlank()) " ($country)" else ""
+    return when {
+      rawName.contains("female", ignoreCase = true) -> "女性音色$tag"
+      rawName.contains("male", ignoreCase = true) -> "男性音色$tag"
+      rawName.contains("neural", ignoreCase = true) -> "神经网络自然音$tag"
+      rawName.contains("local", ignoreCase = true) -> "离线标准音$tag"
+      else -> rawName.substringAfterLast("#").substringAfterLast("_")
+    }
   }
 
   /**
